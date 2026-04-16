@@ -1,8 +1,5 @@
+pandas
+requests
+python-dotenv
 fastapi
 uvicorn
-pandas
-numpy
-scikit-learn
-python-dotenv
-requests
-pydantic

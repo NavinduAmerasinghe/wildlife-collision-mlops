@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Virtual environments
+venv/
+env/
+
+# Data
+data/raw/*
+data/bronze/*
+data/silver/*
+data/gold/*
+
+# Models
+models/*
+
+# Logs
+logs/*
+
+# VSCode
+.vscode/
