@@ -1,0 +1,6 @@
+timestamp,location,temperature,precipitation,wind_speed,visibility,condition
+2026-04-01T06:00:00,Tampere,3.2,1.5,12.4,5.0,rain
+2026-04-01T09:00:00,Tampere,5.1,0.0,10.1,10.0,cloudy
+2026-04-02T11:00:00,Nokia,1.8,2.2,14.0,4.2,rain
+2026-04-03T05:00:00,Kangasala,-1.2,0.5,8.3,3.5,fog
+2026-04-04T22:00:00,Orivesi,0.4,3.1,16.5,2.8,snow
