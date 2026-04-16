@@ -1,17 +1,23 @@
 """
-Mock road context data ingestion for Bronze layer.
+Bronze road context data ingestion: loads raw road context from CSV.
 """
 import pandas as pd
+from pathlib import Path
 
-def load_road_context():
+def load_road_context(raw_path='data/raw/road_context.csv'):
 	"""
-	Returns a mock pandas DataFrame for road context data.
+	Loads road context data from a CSV file.
+	Returns a pandas DataFrame. If file does not exist, returns empty DataFrame.
+	This is Bronze raw ingestion only (no transformation).
 	"""
-	data = [
-		{"road_segment_id": 101, "location": "Helsinki", "speed_limit": 50, "road_type": "urban", "curvature": "straight"},
-		{"road_segment_id": 202, "location": "Tampere", "speed_limit": 80, "road_type": "rural", "curvature": "curved"},
-		{"road_segment_id": 303, "location": "Oulu", "speed_limit": 60, "road_type": "urban", "curvature": "slight"},
-	]
-	df = pd.DataFrame(data)
-	print(f"[INFO] Created mock road context data: {len(df)} rows.")
-	return df
+	path = Path(raw_path)
+	if not path.exists():
+		print(f"[INFO] Road context CSV not found: {raw_path}. Returning empty DataFrame.")
+		return pd.DataFrame()
+	try:
+		df = pd.read_csv(path)
+		print(f"[INFO] Loaded road context: {len(df)} rows.")
+		return df
+	except Exception as e:
+		print(f"[ERROR] Failed to load road context CSV: {e}")
+		return pd.DataFrame()

@@ -17,7 +17,8 @@ def main():
     # Load weather data from CSV
     weather_df = load_weather_data()
 
-    # Load road context data (still mock)
+
+    # Load road context data from CSV
     road_df = load_road_context()
 
     # Prepare tracking dicts
@@ -43,9 +44,14 @@ def main():
         file_paths["weather_data"] = None
         row_counts["weather_data"] = 0
 
-    # Save road context (always present for now)
-    file_paths["road_context"] = save_to_bronze(road_df, "road_context", batch_id)
-    row_counts["road_context"] = len(road_df)
+    # Save road context if not empty
+    if not road_df.empty:
+        file_paths["road_context"] = save_to_bronze(road_df, "road_context", batch_id)
+        row_counts["road_context"] = len(road_df)
+    else:
+        print("[WARN] Road context data is empty. Skipping save.")
+        file_paths["road_context"] = None
+        row_counts["road_context"] = 0
 
     # Save batch metadata
     save_batch_metadata(batch_id, sources, file_paths, row_counts)

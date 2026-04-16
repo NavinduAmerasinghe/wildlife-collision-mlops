@@ -1,0 +1,6 @@
+road_segment_id,location,speed_limit,road_type,curvature,lane_count,surface_type
+R001,Tampere,80,highway,low,2,asphalt
+R002,Nokia,60,regional,medium,2,asphalt
+R003,Kangasala,50,urban,low,2,asphalt
+R004,Orivesi,100,rural,high,2,gravel
+R005,Tampere,40,urban,low,1,asphalt
