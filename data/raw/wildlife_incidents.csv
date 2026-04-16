@@ -1,0 +1,5 @@
+incident_id,timestamp,location,animal_type,severity
+1,2026-04-01T06:30:00,Tampere,deer,high
+2,2026-04-02T11:15:00,Nokia,moose,medium
+3,2026-04-03T05:50:00,Kangasala,deer,low
+4,2026-04-04T22:40:00,Orivesi,elk,high

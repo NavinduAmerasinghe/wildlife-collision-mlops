@@ -1,0 +1,4 @@
+timestamp,location,temperature,precipitation,wind_speed
+2026-04-16 08:00:00,Helsinki,5.2,0.0,3.1
+2026-04-16 09:00:00,Tampere,4.8,0.2,2.7
+2026-04-16 10:00:00,Oulu,2.1,0.0,4.0

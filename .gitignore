@@ -1,25 +1,10 @@
-# Python
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 .env
+logs/
+data/bronze/
+data/silver/
+data/gold/
 
-# Virtual environments
-venv/
-env/
-
-# Data
-data/raw/*
-data/bronze/*
-data/silver/*
-data/gold/*
-
-# Models
-models/*
-
-# Logs
-logs/*
-
-# VSCode
-.vscode/
+# You may or may not want to ignore data/raw/ depending on whether you want to commit sample raw files.
