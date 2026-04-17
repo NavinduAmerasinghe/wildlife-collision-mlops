@@ -32,38 +32,149 @@
     padding: 0;
   }
 
-  .container {
-    max-width: 480px;
-    margin: 40px auto;
+  .dashboard-container {
+    max-width: 900px;
+    margin: 32px auto 32px auto;
     background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    padding: 32px 24px 24px 24px;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+    padding: 0 0 32px 0;
   }
 
-  h1 {
+  .hero-section {
+    padding: 32px 32px 16px 32px;
     text-align: center;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(90deg, #e3f2fd 0%, #fff 100%);
+  }
+  .hero-section h1 {
+    font-size: 2.2rem;
     margin-bottom: 8px;
   }
-
-  .description {
-    text-align: center;
-    color: #555;
-    margin-bottom: 24px;
+  .hero-desc {
+    color: #1976d2;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .hero-purpose {
+    color: #333;
+    margin-bottom: 0;
   }
 
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    justify-content: center;
+    margin: 28px 0 0 0;
+  }
+  .summary-card {
+    background: #f7f7f7;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(25, 118, 210, 0.06);
+    padding: 18px 20px;
+    min-width: 180px;
+    max-width: 220px;
+    flex: 1 1 180px;
+    text-align: center;
+  }
+  .summary-card h3 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+  }
+
+  .data-sources-section {
+    margin: 36px 0 0 0;
+    padding: 0 32px;
+  }
+  .data-sources-section h2 {
+    margin-bottom: 12px;
+    color: #1976d2;
+  }
+  .data-source-cards {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .data-source-card {
+    background: #f1f8e9;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(56, 142, 60, 0.08);
+    padding: 16px 18px;
+    min-width: 160px;
+    max-width: 200px;
+    flex: 1 1 160px;
+    text-align: center;
+  }
+  .data-source-card h4 {
+    margin: 0 0 6px 0;
+    color: #388e3c;
+  }
+
+  .pipeline-overview {
+    margin: 36px 0 0 0;
+    padding: 0 32px;
+  }
+  .pipeline-overview h2 {
+    color: #1976d2;
+    margin-bottom: 12px;
+  }
+  .pipeline-stages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+  .pipeline-stage {
+    background: #fff3e0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(255, 167, 38, 0.08);
+    padding: 12px 16px;
+    min-width: 110px;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stage-name {
+    font-weight: bold;
+    color: #ff9800;
+  }
+  .stage-desc {
+    font-size: 0.95rem;
+    color: #555;
+  }
+  .stage-arrow {
+    font-size: 1.5rem;
+    color: #ff9800;
+    margin-top: 2px;
+  }
+
+  .prediction-section {
+    margin: 40px 0 0 0;
+    padding: 0 32px;
+  }
+  .prediction-section h2 {
+    color: #1976d2;
+    margin-bottom: 12px;
+  }
   .prediction-form {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    background: #f7f7f7;
+    border-radius: 8px;
+    padding: 18px 16px;
+    box-shadow: 0 1px 4px rgba(25, 118, 210, 0.04);
   }
-
   .form-row {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
-
   button[type="submit"] {
     margin-top: 12px;
     padding: 10px;
@@ -82,7 +193,6 @@
     background: #b0b0b0;
     cursor: not-allowed;
   }
-
   .result-card {
     margin-top: 28px;
     padding: 18px 16px;
@@ -90,8 +200,8 @@
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(25, 118, 210, 0.08);
     text-align: left;
+    border: 2px solid #1976d2;
   }
-
   .error {
     margin-top: 18px;
     color: #b71c1c;
@@ -99,6 +209,38 @@
     padding: 10px;
     border-radius: 6px;
     text-align: center;
+  }
+  .explanation-panel {
+    margin-top: 18px;
+    background: #fffde7;
+    border-radius: 8px;
+    padding: 14px 14px 10px 14px;
+    box-shadow: 0 1px 4px rgba(255, 235, 59, 0.08);
+    border-left: 4px solid #ffd600;
+  }
+  .explanation-panel h4 {
+    margin: 0 0 6px 0;
+    color: #bfa600;
+  }
+  .explanation-panel ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .impact-section {
+    margin: 44px 0 0 0;
+    padding: 0 32px;
+  }
+  .impact-section h2 {
+    color: #1976d2;
+    margin-bottom: 12px;
+  }
+  .impact-section ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .impact-section li {
+    margin-bottom: 8px;
+    font-size: 1.05rem;
   }
   color: var(--text-h);
 }

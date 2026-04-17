@@ -1,13 +1,26 @@
 """
 FastAPI app for wildlife collision risk prediction.
 """
+
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from api.model_loader import load_latest_model
 from api.schemas import PredictionRequest, PredictionResponse
 import pandas as pd
 import numpy as np
 
+
 app = FastAPI(title="Wildlife Collision Risk Prediction API")
+
+# Enable CORS for local React frontend during development
+# This allows the frontend running on Vite (localhost:5173 or 127.0.0.1:5173) to call the API without CORS errors.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load the model once at startup
 try:
