@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import HeroSection from "./components/HeroSection";
 import SummaryCards from "./components/SummaryCards";
 import DataSourcesSection from "./components/DataSourcesSection";
 import PipelineOverview from "./components/PipelineOverview";
 import DatasetSummary from "./components/DatasetSummary";
+import { fetchDashboardSummary, fetchModelComparison, fetchPipelineStatus } from "./services/dashboardApi";
 import HistoricalTrends from "./components/HistoricalTrends";
 import PredictionForm from "./components/PredictionForm";
 import PredictionResult from "./components/PredictionResult";
@@ -16,12 +17,42 @@ import ImpactSection from "./components/ImpactSection";
 import "./index.css";
 
 // Main dashboard app
-function App() {
+
   // State for prediction result, loading, error, and last input
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lastInput, setLastInput] = useState(null);
+
+  // Dashboard data state
+  const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [modelComparison, setModelComparison] = useState(null);
+  const [pipelineStatus, setPipelineStatus] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
+
+  // Fetch dashboard data on mount
+  useEffect(() => {
+    async function fetchData() {
+      setDashboardLoading(true);
+      setDashboardError("");
+      try {
+        const [summary, comparison, status] = await Promise.all([
+          fetchDashboardSummary(),
+          fetchModelComparison(),
+          fetchPipelineStatus(),
+        ]);
+        setDashboardSummary(summary);
+        setModelComparison(comparison);
+        setPipelineStatus(status);
+      } catch (err) {
+        setDashboardError(err.message);
+      } finally {
+        setDashboardLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // Handle prediction submission
   const handlePredict = async (inputData) => {
@@ -55,14 +86,22 @@ function App() {
       {/* Project summary cards */}
       <SummaryCards />
 
-      {/* Dataset summary cards (static/mock for now) */}
-      <DatasetSummary />
+      {/* Dataset summary cards (now uses real backend data) */}
+      <DatasetSummary
+        summary={dashboardSummary}
+        loading={dashboardLoading}
+        error={dashboardError}
+      />
 
       {/* Data sources section */}
       <DataSourcesSection />
 
-      {/* Pipeline overview section */}
-      <PipelineOverview />
+      {/* Pipeline overview section (now uses real backend status) */}
+      <PipelineOverview
+        pipelineStatus={pipelineStatus}
+        loading={dashboardLoading}
+        error={dashboardError}
+      />
 
       {/* Historical trends charts (mock data) */}
       <HistoricalTrends />
