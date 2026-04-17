@@ -4,10 +4,13 @@ FastAPI app for wildlife collision risk prediction.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
 from api.model_loader import load_latest_model
 from api.schemas import PredictionRequest, PredictionResponse
+from api.dashboard_routes import router as dashboard_router
 import pandas as pd
 import numpy as np
+
 
 
 app = FastAPI(title="Wildlife Collision Risk Prediction API")
@@ -21,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include dashboard routes for project metadata endpoints
+app.include_router(dashboard_router)
 
 # Load the model once at startup
 try:
