@@ -1,11 +1,16 @@
 
 import React, { useState } from "react";
+
 import HeroSection from "./components/HeroSection";
 import SummaryCards from "./components/SummaryCards";
 import DataSourcesSection from "./components/DataSourcesSection";
 import PipelineOverview from "./components/PipelineOverview";
+import DatasetSummary from "./components/DatasetSummary";
+import HistoricalTrends from "./components/HistoricalTrends";
 import PredictionForm from "./components/PredictionForm";
 import PredictionResult from "./components/PredictionResult";
+import RiskMeter from "./components/RiskMeter";
+import RiskFactorCards from "./components/RiskFactorCards";
 import ExplanationPanel from "./components/ExplanationPanel";
 import ImpactSection from "./components/ImpactSection";
 import "./index.css";
@@ -50,17 +55,30 @@ function App() {
       {/* Project summary cards */}
       <SummaryCards />
 
+      {/* Dataset summary cards (static/mock for now) */}
+      <DatasetSummary />
+
       {/* Data sources section */}
       <DataSourcesSection />
 
       {/* Pipeline overview section */}
       <PipelineOverview />
 
-      {/* Prediction form and result */}
+      {/* Historical trends charts (mock data) */}
+      <HistoricalTrends />
+
+      {/* Prediction form, result, and analytics */}
       <section className="prediction-section">
         <h2>Try the Prediction Demo</h2>
         <PredictionForm onPredict={handlePredict} loading={loading} />
         {error && <div className="error">{error}</div>}
+        {/* Visual risk meter and risk factor cards */}
+        {result && (
+          <>
+            <RiskMeter probability={result.probability} riskLabel={result.risk_label} />
+            <RiskFactorCards input={lastInput} />
+          </>
+        )}
         <PredictionResult result={result} />
         {/* Simple explanation panel based on input */}
         <ExplanationPanel input={lastInput} result={result} />
