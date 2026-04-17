@@ -1,0 +1,4 @@
+road_segment_id,location,speed_limit,road_type,curvature
+101,Helsinki,50,urban,straight
+202,Tampere,80,rural,curved
+303,Oulu,60,urban,slight
