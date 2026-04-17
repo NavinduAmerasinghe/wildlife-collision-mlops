@@ -7,7 +7,7 @@ import pandas as pd
 def save_to_bronze(df, source_name, batch_id, base_dir='data/bronze'):
 	"""
 	Saves a DataFrame to the Bronze folder with a timestamped filename.
-	Returns the saved file path.
+	Ensures the directory exists. Returns the saved file path as a string.
 	"""
 	folder = Path(base_dir) / source_name
 	folder.mkdir(parents=True, exist_ok=True)

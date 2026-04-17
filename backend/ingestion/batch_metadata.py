@@ -11,17 +11,15 @@ def generate_batch_id():
 	"""
 	return datetime.utcnow().strftime('%Y%m%dT%H%M%S')
 
-def save_batch_metadata(batch_id, sources, file_paths, row_counts, log_dir='logs/batches'):
+def save_batch_metadata(batch_id, source_metadata, log_dir='logs/batches'):
 	"""
-	Saves batch metadata as a JSON file.
+	Saves batch metadata as a JSON file. Metadata includes per-source status, row_count, and file_path.
 	"""
-	created_at = datetime.utcnow().isoformat() + 'Z'
+	created_at = datetime.utcnow().replace(microsecond=0).isoformat()
 	metadata = {
 		"batch_id": batch_id,
 		"created_at": created_at,
-		"sources": sources,
-		"file_paths": file_paths,
-		"row_counts": row_counts
+		"sources": source_metadata
 	}
 	log_folder = Path(log_dir)
 	log_folder.mkdir(parents=True, exist_ok=True)
