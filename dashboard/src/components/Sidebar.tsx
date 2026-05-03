@@ -62,13 +62,11 @@ export default function Sidebar() {
       {/* Nav section */}
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
         <NavLink className={navLinkClass} to="/analytics" end>
-          <NavIconAnalytics />
-          <span className="text-[18px]">Analytics & Route Prediction</span>
+          <NavIconAnalytics /> Analytics & Route Prediction
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
         <NavLink className={navLinkClass} to="/liveTraffic" end>
-          <NavIconTraffic />
-          <span className="text-[18px]">Smart Road Weather & Traffic Pred</span>
+          <NavIconTraffic /> Smart Road Weather & Traffic Pred
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
 
@@ -76,12 +74,12 @@ export default function Sidebar() {
         <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
         <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
         <NavLink className={navLinkClass} to="/alerts" end>
-          <NavIconAlert /> <span className="text-[18px]"> Alert </span>
+          <NavIconAlert /> Alerts
           <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
         <NavLink className={navLinkClass} to="/cameras" end>
-          <NavIconCamera /> <span className="text-[18px]"> Cameras </span>
+          <NavIconCamera /> Cameras
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
       </nav>
@@ -93,7 +91,7 @@ export default function Sidebar() {
           type="button"
           onClick={() => setSettingsOpen(true)}
         >
-          <NavIconSettings /> <span className="text-[18px]"> Settings </span>
+          <NavIconSettings /> Settings
         </button>
         <div className="flex items-center gap-3 mt-2">
           <div className="w-[38px] h-[38px] rounded-full bg-gradient-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
