@@ -51,55 +51,57 @@ function SunIcon() {
 export default function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
-    <aside className="w-[22%] min-w-[220px] max-w-[320px] h-full bg-[#12121f] flex flex-col text-white text-[13px] select-none">
+    <aside className="w-[22%] min-w-[220px] max-w-[340px] h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-        <span className="text-[11px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">
+        <span className="text-[16px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">
           NAVIGATION <SunIcon />
         </span>
       </div>
 
       {/* Nav section */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2">
+      <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
         <NavLink className={navLinkClass} to="/analytics" end>
-          <NavIconAnalytics /> Analytics & Route Prediction
+          <NavIconAnalytics />
+          <span className="text-[18px]">Analytics & Route Prediction</span>
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
         <NavLink className={navLinkClass} to="/liveTraffic" end>
-          <NavIconTraffic /> Smart Road Weather & Traffic Pred
+          <NavIconTraffic />
+          <span className="text-[18px]">Smart Road Weather & Traffic Pred</span>
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
 
         {/* Divider and Monitoring section */}
         <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
-        <div className="px-2 pb-1 text-[10px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
+        <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
         <NavLink className={navLinkClass} to="/alerts" end>
-          <NavIconAlert /> Alerts
+          <NavIconAlert /> <span className="text-[18px]"> Alert </span>
           <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
         <NavLink className={navLinkClass} to="/cameras" end>
-          <NavIconCamera /> Cameras
+          <NavIconCamera /> <span className="text-[18px]"> Cameras </span>
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-2">
+      <div className="px-5 py-5 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-4 text-[18px]">
         <button
           className={navLinkClass({ isActive: false })}
           type="button"
           onClick={() => setSettingsOpen(true)}
         >
-          <NavIconSettings /> Settings
+          <NavIconSettings /> <span className="text-[18px]"> Settings </span>
         </button>
         <div className="flex items-center gap-3 mt-2">
-          <div className="w-[28px] h-[28px] rounded-full bg-gradient-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
-            <span className="text-white font-bold text-[13px]">U</span>
+          <div className="w-[38px] h-[38px] rounded-full bg-gradient-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
+            <span className="text-white font-bold text-[18px]">U</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[#c5c5ff] text-[13px] font-medium leading-tight">Uusimaa Region</span>
-            <span className="text-[#44445a] text-[11px] leading-tight">Active monitoring</span>
+            <span className="text-[#c5c5ff] text-[18px] font-medium leading-tight">Uusimaa Region</span>
+            <span className="text-[#44445a] text-[15px] leading-tight">Active monitoring</span>
           </div>
           <span className="ml-auto w-[8px] h-[8px] rounded-full bg-green-500" />
         </div>
