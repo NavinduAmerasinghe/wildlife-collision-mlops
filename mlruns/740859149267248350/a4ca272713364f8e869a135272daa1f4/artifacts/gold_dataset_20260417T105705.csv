@@ -1,0 +1,8 @@
+incident_id,timestamp,location,animal_type,severity,timestamp_weather,temperature,precipitation,wind_speed,visibility,condition,road_segment_id,speed_limit,road_type,curvature,lane_count,surface_type,hour,month,is_night,is_weekend,high_precipitation,high_risk_target
+1,2026-04-01 06:30:00,Tampere,deer,high,2026-04-01 06:00:00,3.2,1.5,12.4,5.0,rain,R001,80,highway,low,2,asphalt,6,4,0,0,1,1
+1,2026-04-01 06:30:00,Tampere,deer,high,2026-04-01 06:00:00,3.2,1.5,12.4,5.0,rain,R005,40,urban,low,1,asphalt,6,4,0,0,1,1
+1,2026-04-01 06:30:00,Tampere,deer,high,2026-04-01 09:00:00,5.1,0.0,10.1,10.0,cloudy,R001,80,highway,low,2,asphalt,6,4,0,0,0,1
+1,2026-04-01 06:30:00,Tampere,deer,high,2026-04-01 09:00:00,5.1,0.0,10.1,10.0,cloudy,R005,40,urban,low,1,asphalt,6,4,0,0,0,1
+2,2026-04-02 11:15:00,Nokia,moose,medium,2026-04-02 11:00:00,1.8,2.2,14.0,4.2,rain,R002,60,regional,medium,2,asphalt,11,4,0,0,1,0
+3,2026-04-03 05:50:00,Kangasala,deer,low,2026-04-03 05:00:00,-1.2,0.5,8.3,3.5,fog,R003,50,urban,low,2,asphalt,5,4,1,0,0,0
+4,2026-04-04 22:40:00,Orivesi,elk,high,2026-04-04 22:00:00,0.4,3.1,16.5,2.8,snow,R004,100,rural,high,2,gravel,22,4,1,1,1,1

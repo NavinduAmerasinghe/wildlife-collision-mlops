@@ -1,0 +1,1 @@
+['temperature', 'precipitation', 'wind_speed', 'visibility', 'speed_limit', 'hour', 'month', 'is_night', 'is_weekend', 'high_precipitation']

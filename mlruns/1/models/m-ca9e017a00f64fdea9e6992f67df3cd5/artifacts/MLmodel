@@ -1,0 +1,41 @@
+artifact_path: file:C:/Users/user/Desktop/Project/wildlife-collision-mlops/mlruns/1/models/m-ca9e017a00f64fdea9e6992f67df3cd5/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.11.1
+model_id: m-ca9e017a00f64fdea9e6992f67df3cd5
+model_size_bytes: 1643
+model_uuid: m-ca9e017a00f64fdea9e6992f67df3cd5
+prompts: null
+run_id: 28753171f8a34a50bbf89e2aea38620e
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "temperature", "required": true}, {"type":
+    "double", "name": "precipitation", "required": true}, {"type": "double", "name":
+    "wind_speed", "required": true}, {"type": "double", "name": "visibility", "required":
+    true}, {"type": "long", "name": "speed_limit", "required": true}, {"type": "long",
+    "name": "hour", "required": true}, {"type": "long", "name": "month", "required":
+    true}, {"type": "long", "name": "is_night", "required": true}, {"type": "long",
+    "name": "is_weekend", "required": true}, {"type": "long", "name": "high_precipitation",
+    "required": true}]'
+  outputs: '[{"type": "long", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-05-04 17:37:39.244361'

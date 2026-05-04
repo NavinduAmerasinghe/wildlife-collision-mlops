@@ -1,0 +1,10 @@
+artifact_location: file:C:/Users/user/Desktop/Project/wildlife-collision-mlops/mlruns/740859149267248350/models/m-dcc7ed0817a746b1a7bd74fba4b542d5/artifacts
+creation_timestamp: 1777904845481
+experiment_id: '740859149267248350'
+last_updated_timestamp: 1777904851405
+model_id: m-dcc7ed0817a746b1a7bd74fba4b542d5
+model_type: null
+name: model
+source_run_id: 4de85686db3b4efb882c79efe74649e6
+status: 2
+status_message: null

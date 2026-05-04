@@ -192,17 +192,50 @@ const AnalyticsandTrends: React.FC = () => {
 
             {/* 5. Feature Usage Panel */}
             {(summary?.feature_count || comparison?.logistic_regression || comparison?.random_forest) && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4 text-slate-100">Feature Usage Panel</h2>
-                <div className={`rounded-2xl p-5 shadow text-slate-200 text-base ${theme === 'dark' ? cardDark : cardLight}`}>
-                  <div>The model currently uses <span className="font-bold">{featureList.length}</span> input features:</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {featureList.map((f) => (
-                      <span key={f} className="px-2 py-1 rounded bg-slate-700 text-slate-100 text-xs font-mono">{f}</span>
-                    ))}
+              <>
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold mb-4 text-slate-100">Feature Usage Panel</h2>
+                  <div className={`rounded-2xl p-5 shadow text-slate-200 text-base ${theme === 'dark' ? cardDark : cardLight}`}>
+                    <div>The model currently uses <span className="font-bold">{featureList.length}</span> input features:</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {featureList.map((f) => (
+                        <span key={f} className="px-2 py-1 rounded bg-slate-700 text-slate-100 text-xs font-mono">{f}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Risk Pattern Insights Section */}
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold mb-4 text-slate-100">Risk Pattern Insights</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Night-Time Risk Pattern */}
+                    <div className={`rounded-2xl p-5 shadow flex flex-col gap-2 border-l-4 border-indigo-500 ${theme === 'dark' ? cardDark : cardLight}`}>
+                      <div className="font-semibold text-lg text-indigo-300 mb-1">Night-Time Risk Pattern</div>
+                      <div className="text-slate-200 mb-2">Wildlife collision risk can increase during night hours because driver visibility is lower and animal activity may be harder to detect.</div>
+                      <div className="text-xs text-slate-400">Related features: <span className="font-mono text-slate-300">is_night</span>, <span className="font-mono text-slate-300">hour</span></div>
+                    </div>
+                    {/* Weather-Based Risk Pattern */}
+                    <div className={`rounded-2xl p-5 shadow flex flex-col gap-2 border-l-4 border-cyan-500 ${theme === 'dark' ? cardDark : cardLight}`}>
+                      <div className="font-semibold text-lg text-cyan-300 mb-1">Rain and Visibility Pattern</div>
+                      <div className="text-slate-200 mb-2">Precipitation and reduced visibility can increase uncertainty on roads, making wildlife detection more difficult.</div>
+                      <div className="text-xs text-slate-400">Related features: <span className="font-mono text-slate-300">precipitation</span>, <span className="font-mono text-slate-300">visibility</span>, <span className="font-mono text-slate-300">high_precipitation</span></div>
+                    </div>
+                    {/* Speed Context Pattern */}
+                    <div className={`rounded-2xl p-5 shadow flex flex-col gap-2 border-l-4 border-rose-500 ${theme === 'dark' ? cardDark : cardLight}`}>
+                      <div className="font-semibold text-lg text-rose-300 mb-1">Speed Limit Pattern</div>
+                      <div className="text-slate-200 mb-2">Higher speed limits may increase collision severity and reduce driver reaction time in wildlife-prone areas.</div>
+                      <div className="text-xs text-slate-400">Related features: <span className="font-mono text-slate-300">speed_limit</span></div>
+                    </div>
+                    {/* Seasonal/Temporal Pattern */}
+                    <div className={`rounded-2xl p-5 shadow flex flex-col gap-2 border-l-4 border-amber-500 ${theme === 'dark' ? cardDark : cardLight}`}>
+                      <div className="font-semibold text-lg text-amber-300 mb-1">Seasonal and Weekend Pattern</div>
+                      <div className="text-slate-200 mb-2">Month and weekend indicators help the model capture seasonal movement and travel behavior patterns.</div>
+                      <div className="text-xs text-slate-400">Related features: <span className="font-mono text-slate-300">month</span>, <span className="font-mono text-slate-300">is_weekend</span></div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}

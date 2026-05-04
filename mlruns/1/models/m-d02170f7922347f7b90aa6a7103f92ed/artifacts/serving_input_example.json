@@ -1,0 +1,30 @@
+{
+  "dataframe_split": {
+    "columns": [
+      "temperature",
+      "precipitation",
+      "wind_speed",
+      "visibility",
+      "speed_limit",
+      "hour",
+      "month",
+      "is_night",
+      "is_weekend",
+      "high_precipitation"
+    ],
+    "data": [
+      [
+        -1.2,
+        0.5,
+        8.3,
+        3.5,
+        50,
+        5,
+        4,
+        1,
+        0,
+        0
+      ]
+    ]
+  }
+}

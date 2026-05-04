@@ -1,0 +1,14 @@
+artifact_uri: file:C:/Users/user/Desktop/Project/wildlife-collision-mlops/mlruns/740859149267248350/8b77648d43cd4b89956d5833d53dc9a6/artifacts
+end_time: 1777903321327
+entry_point_name: ''
+experiment_id: '740859149267248350'
+lifecycle_stage: active
+run_id: 8b77648d43cd4b89956d5833d53dc9a6
+run_name: 20260504T140154
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777903314789
+status: 3
+tags: []
+user_id: user
