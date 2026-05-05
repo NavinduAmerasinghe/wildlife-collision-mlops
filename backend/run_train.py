@@ -96,6 +96,7 @@ def log_to_mlflow(batch_id, run_info, metadata_path):
 
 
 def main():
+
     print("\n=== Wildlife Collision Model Training Pipeline ===\n")
 
     batch_id = generate_batch_id()
@@ -106,6 +107,14 @@ def main():
     metadata_path = save_model_run_metadata(batch_id, run_info)
 
     log_to_mlflow(batch_id, run_info, metadata_path)
+
+    # DVC tracking for gold and models
+    try:
+        from utils import dvc_utils
+        dvc_utils.run_dvc_add("data/gold/")
+        dvc_utils.run_dvc_add("models/")
+    except Exception as e:
+        print(f"[DVC] Warning: {e}")
 
     print("\n[COMPLETE] Model training pipeline finished.\n")
 

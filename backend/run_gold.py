@@ -34,6 +34,7 @@ def save_gold_metadata(batch_id, gold_info, log_dir='logs/gold_batches'):
     return str(file_path)
 
 def main():
+
     print("\n=== Wildlife Collision Gold Pipeline ===\n")
     batch_id = generate_batch_id()
     print(f"[STEP] Generated Gold batch_id: {batch_id}")
@@ -43,6 +44,13 @@ def main():
 
     # Save Gold batch metadata
     save_gold_metadata(batch_id, gold_info)
+
+    # DVC tracking for gold
+    try:
+        from utils import dvc_utils
+        dvc_utils.run_dvc_add("data/gold/")
+    except Exception as e:
+        print(f"[DVC] Warning: {e}")
 
     print("\n[COMPLETE] Gold pipeline finished.\n")
 

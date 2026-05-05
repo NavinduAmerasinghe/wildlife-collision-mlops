@@ -7,4 +7,12 @@ data/bronze/
 data/silver/
 data/gold/
 
+data/raw/
+models/
+
+# Allow DVC-tracked files
+!data/raw/*.dvc
+!data/gold/*.dvc
+!models/*.dvc
+
 # You may or may not want to ignore data/raw/ depending on whether you want to commit sample raw files.
