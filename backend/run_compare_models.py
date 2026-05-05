@@ -3,7 +3,10 @@ Model comparison pipeline runner for wildlife collision MLOps project.
 """
 from datetime import datetime
 import json
+from pathlib import Path
 from model.compare_models import compare_models
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def generate_batch_id():
     """
@@ -11,7 +14,7 @@ def generate_batch_id():
     """
     return datetime.utcnow().strftime('%Y%m%dT%H%M%S')
 
-def save_comparison_metadata(batch_id, comparison_info, log_dir='logs/model_comparisons'):
+def save_comparison_metadata(batch_id, comparison_info, log_dir=None):
     """
     Saves model comparison metadata as a JSON file.
     """
@@ -19,13 +22,17 @@ def save_comparison_metadata(batch_id, comparison_info, log_dir='logs/model_comp
     metadata = dict(comparison_info)
     metadata['batch_id'] = batch_id
     metadata['created_at'] = created_at
-    from pathlib import Path
+
+    if log_dir is None:
+        log_dir = PROJECT_ROOT / "logs" / "model_comparisons"
+
     log_folder = Path(log_dir)
     log_folder.mkdir(parents=True, exist_ok=True)
     file_path = log_folder / f"model_comparison_{batch_id}.json"
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2)
     print(f"[INFO] Saved model comparison metadata to {file_path}")
+    print(f"[INFO] Comparison metadata absolute path: {file_path.resolve()}")
     return str(file_path)
 
 def main():
@@ -49,7 +56,7 @@ def main():
         print(f"[MODEL SAVED] {comparison_info.get('saved_model_path')}")
     else:
         print("\n[ERROR] Model comparison did not complete successfully.")
-    print(f"[COMPARISON LOG SAVED] logs/model_comparisons/model_comparison_{batch_id}.json")
+    print(f"[COMPARISON LOG SAVED] {PROJECT_ROOT / 'logs' / 'model_comparisons' / f'model_comparison_{batch_id}.json'}")
     print("\n[COMPLETE] Model comparison pipeline finished.\n")
 
 if __name__ == "__main__":

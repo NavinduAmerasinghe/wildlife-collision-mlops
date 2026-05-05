@@ -1,28 +1,37 @@
 """
-Pipeline runner for wildlife-collision-mlops
-Runs Gold pipeline and Model training, then tracks outputs with DVC.
+Full pipeline runner for wildlife-collision-mlops.
+
+Runs:
+Bronze -> Silver -> Gold -> Train
 """
+
+import subprocess
 import sys
-import os
 from pathlib import Path
-from utils import dvc_utils
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_DIR = Path(__file__).resolve().parent
 
-# Run Gold pipeline
-def run_gold():
-    os.system(f"{sys.executable} run_gold.py")
 
-# Run Model training
-def run_train():
-    os.system(f"{sys.executable} run_train.py")
+def run_stage(script_name: str):                                                   
+    print(f"\n==============================")
+    print(f"Running {script_name}")
+    print(f"==============================\n")
+
+    subprocess.run(
+        [sys.executable, script_name],
+        cwd=BACKEND_DIR,
+        check=True
+    )
+
 
 def main():
-    run_gold()
-    run_train()
-    # DVC tracking
-    dvc_utils.run_dvc_add("data/gold/")
-    dvc_utils.run_dvc_add("models/")
+    run_stage("run_bronze.py")
+    run_stage("run_silver.py")
+    run_stage("run_gold.py")
+    run_stage("run_train.py")
+
+    print("\n[COMPLETE] Full MLOps pipeline finished successfully.\n")
+
 
 if __name__ == "__main__":
     main()

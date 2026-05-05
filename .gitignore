@@ -16,3 +16,4 @@ models/
 !models/*.dvc
 
 # You may or may not want to ignore data/raw/ depending on whether you want to commit sample raw files.
+/models
