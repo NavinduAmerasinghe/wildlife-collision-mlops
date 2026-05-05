@@ -3,7 +3,10 @@ Gold pipeline runner for wildlife collision MLOps project.
 """
 from datetime import datetime
 import json
+from pathlib import Path
 from gold.build_gold import build_gold
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def generate_batch_id():
     """
@@ -11,10 +14,12 @@ def generate_batch_id():
     """
     return datetime.utcnow().strftime('%Y%m%dT%H%M%S')
 
-def save_gold_metadata(batch_id, gold_info, log_dir='logs/gold_batches'):
+def save_gold_metadata(batch_id, gold_info, log_dir=None):
     """
     Saves Gold batch metadata as a JSON file.
     """
+    if log_dir is None:
+        log_dir = PROJECT_ROOT / "logs" / "gold_batches"
     created_at = datetime.utcnow().replace(microsecond=0).isoformat()
     metadata = {
         "batch_id": batch_id,

@@ -3,9 +3,12 @@ Silver pipeline runner for wildlife collision MLOps project.
 """
 from datetime import datetime
 import json
+from pathlib import Path
 from silver.process_wildlife import process_wildlife
 from silver.process_weather import process_weather
 from silver.process_road_context import process_road_context
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def generate_batch_id():
@@ -15,10 +18,12 @@ def generate_batch_id():
     return datetime.utcnow().strftime('%Y%m%dT%H%M%S')
 
 
-def save_silver_metadata(batch_id, source_metadata, log_dir='logs/silver_batches'):
+def save_silver_metadata(batch_id, source_metadata, log_dir=None):
     """
     Saves Silver batch metadata as a JSON file.
     """
+    if log_dir is None:
+        log_dir = PROJECT_ROOT / "logs" / "silver_batches"
     created_at = datetime.utcnow().replace(microsecond=0).isoformat()
     metadata = {
         "batch_id": batch_id,
@@ -44,15 +49,15 @@ def main():
 
     # Process wildlife incidents
     print("[STEP] Processing wildlife incidents...")
-    source_metadata["wildlife_incidents"] = process_wildlife(batch_id)
+    source_metadata["wildlife_incidents"] = process_wildlife(batch_id, PROJECT_ROOT)
 
     # Process weather
     print("[STEP] Processing weather data...")
-    source_metadata["weather"] = process_weather(batch_id)
+    source_metadata["weather"] = process_weather(batch_id, PROJECT_ROOT)
 
     # Process road context
     print("[STEP] Processing road context data...")
-    source_metadata["road_context"] = process_road_context(batch_id)
+    source_metadata["road_context"] = process_road_context(batch_id, PROJECT_ROOT)
 
     # Save Silver batch metadata
     save_silver_metadata(batch_id, source_metadata)

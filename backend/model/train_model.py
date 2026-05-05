@@ -14,10 +14,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 
-from model.model_utils import find_latest_gold_csv
+from model.model_utils import find_latest_gold_csv, GOLD_DIR
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODELS_DIR = PROJECT_ROOT / "models"
 MLFLOW_DB = f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
 EXPERIMENT_NAME = "wildlife_collision_model_training"
 
@@ -30,15 +31,19 @@ def setup_mlflow():
 def train_model(batch_id):
     setup_mlflow()
 
+    print(f"[INFO] Gold directory: {GOLD_DIR}")
+    
     gold_file = find_latest_gold_csv()
 
     if not gold_file:
-        print("[ERROR] No Gold dataset found.")
+        print(f"[ERROR] No Gold dataset found in {GOLD_DIR}.")
         return {
             "status": "empty",
             "row_count": 0,
             "gold_file_used": None,
         }
+
+    print(f"[INFO] Gold file found: {gold_file}")
 
     try:
         df = pd.read_csv(gold_file)
@@ -110,7 +115,7 @@ def train_model(batch_id):
             "f1_score": f1_score(y_test, y_pred, zero_division=0),
         }
 
-        model_folder = PROJECT_ROOT / "models"
+        model_folder = MODELS_DIR
         model_folder.mkdir(parents=True, exist_ok=True)
 
         model_path = model_folder / f"wildlife_risk_model_{batch_id}.pkl"
@@ -119,6 +124,7 @@ def train_model(batch_id):
             pickle.dump(model, f)
 
         print(f"[OK] Model saved to {model_path}")
+        print(f"[INFO] Model absolute path: {model_path.resolve()}")
 
         with mlflow.start_run(run_name=f"train_{batch_id}"):
             mlflow.log_param("batch_id", batch_id)

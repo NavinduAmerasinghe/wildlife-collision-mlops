@@ -5,17 +5,19 @@ import pandas as pd
 from pathlib import Path
 from .silver_utils import find_latest_bronze_csv
 
-def process_road_context(batch_id):
+def process_road_context(batch_id, project_root):
     """
     Cleans and standardizes road context data from Bronze to Silver.
     """
-    bronze_folder = Path('data/bronze/road_context')
-    silver_folder = Path('data/silver/road_context')
+    project_root = Path(project_root)
+    bronze_folder = project_root / "data" / "bronze" / "road_context"
+    silver_folder = project_root / "data" / "silver" / "road_context"
     silver_folder.mkdir(parents=True, exist_ok=True)
     latest_file = find_latest_bronze_csv(bronze_folder)
     if latest_file is None:
-        print("[WARN] No Bronze road context file found.")
+        print(f"[WARN] No Bronze road context file found in {bronze_folder}")
         return {'status': 'empty', 'row_count': 0, 'file_path': None}
+    print(f"[INFO] Reading Bronze file: {latest_file}")
     try:
         df = pd.read_csv(latest_file)
         # Standardize column names
@@ -29,6 +31,7 @@ def process_road_context(batch_id):
         silver_file = silver_folder / f"road_context_silver_{batch_id}.csv"
         df.to_csv(silver_file, index=False)
         print(f"[OK] Road context Silver: {len(df)} rows saved to {silver_file}")
+        print(f"[INFO] Silver file location: {silver_file.resolve()}")
         return {'status': 'success', 'row_count': len(df), 'file_path': str(silver_file)}
     except Exception as e:
         print(f"[ERROR] Road context Silver processing failed: {e}")

@@ -6,15 +6,28 @@ from pathlib import Path
 from gold.gold_utils import find_latest_silver_csv
 from datetime import datetime
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SILVER_DIR = PROJECT_ROOT / "data" / "silver"
+GOLD_DIR = PROJECT_ROOT / "data" / "gold"
+
 def build_gold(batch_id):
     """
     Loads Silver datasets, joins them, adds features, and saves the Gold dataset.
     Returns a dict with status, row_count, file_path, and source_files_used.
     """
+    # Print Silver directory being used
+    print(f"[INFO] Silver directory: {SILVER_DIR}")
+    
     # Find latest Silver files
-    wildlife_file = find_latest_silver_csv('data/silver/wildlife_incidents')
-    weather_file = find_latest_silver_csv('data/silver/weather')
-    road_file = find_latest_silver_csv('data/silver/road_context')
+    wildlife_file = find_latest_silver_csv(SILVER_DIR / "wildlife_incidents")
+    weather_file = find_latest_silver_csv(SILVER_DIR / "weather_data")
+    road_file = find_latest_silver_csv(SILVER_DIR / "road_context")
+    
+    # Log found files
+    print(f"[INFO] Wildlife Silver file: {wildlife_file}")
+    print(f"[INFO] Weather Silver file: {weather_file}")
+    print(f"[INFO] Road context Silver file: {road_file}")
+    
     source_files = {
         'wildlife_incidents': str(wildlife_file) if wildlife_file else None,
         'weather': str(weather_file) if weather_file else None,
@@ -63,11 +76,11 @@ def build_gold(batch_id):
         else:
             gold_df['high_risk_target'] = None
         # Save Gold dataset
-        gold_folder = Path('data/gold')
-        gold_folder.mkdir(parents=True, exist_ok=True)
-        gold_file = gold_folder / f'gold_dataset_{batch_id}.csv'
+        GOLD_DIR.mkdir(parents=True, exist_ok=True)
+        gold_file = GOLD_DIR / f'gold_dataset_{batch_id}.csv'
         gold_df.to_csv(gold_file, index=False)
         print(f'[OK] Gold dataset: {len(gold_df)} rows saved to {gold_file}')
+        print(f'[INFO] Gold file absolute path: {gold_file.resolve()}')
         return {
             'status': 'success',
             'row_count': len(gold_df),
