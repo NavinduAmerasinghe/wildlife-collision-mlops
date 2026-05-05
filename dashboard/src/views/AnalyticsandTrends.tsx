@@ -65,6 +65,14 @@ const AnalyticsandTrends: React.FC = () => {
   const [comparison, setComparison] = useState<ModelComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Upload & pipeline state
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<any>(null);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+  const [pipelineResult, setPipelineResult] = useState<any>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -237,6 +245,179 @@ const AnalyticsandTrends: React.FC = () => {
                 </div>
               </>
             )}
+
+            {/* 6. Dataset Upload & Retraining */}
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-slate-100">Dataset Upload & Retraining</h2>
+              <div className={`rounded-2xl p-5 shadow flex flex-col gap-4 ${theme === 'dark' ? cardDark : cardLight}`}>
+                <form
+                  className="flex flex-col md:flex-row items-center gap-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!uploadFile) return;
+                    setUploadError(null);
+                    setUploadSuccess(null);
+                    setUploadLoading(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('file', uploadFile);
+                      const res = await fetch(`${API_BASE}/data/upload/wildlife`, {
+                        method: 'POST',
+                        body: formData,
+                      });
+                      const data = await res.json();
+                      if (!res.ok || data.status !== 'success') {
+                        setUploadError(data.detail || 'Upload failed.');
+                        setUploadSuccess(null);
+                      } else {
+                        setUploadSuccess(data);
+                        setUploadError(null);
+                      }
+                    } catch (err) {
+                      setUploadError('Upload failed.');
+                      setUploadSuccess(null);
+                    } finally {
+                      setUploadLoading(false);
+                    }
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="block w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-100 hover:file:bg-slate-600"
+                    onChange={(e) => {
+                      setUploadFile(e.target.files?.[0] || null);
+                      setUploadError(null);
+                      setUploadSuccess(null);
+                    }}
+                    disabled={uploadLoading || pipelineLoading}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-semibold disabled:opacity-60"
+                    disabled={!uploadFile || uploadLoading || pipelineLoading}
+                  >
+                    {uploadLoading ? 'Uploading…' : 'Upload Dataset'}
+                  </button>
+                </form>
+                {uploadError && <div className="text-rose-400 text-sm">{uploadError}</div>}
+                {uploadSuccess && (
+                  <div className="text-emerald-300 text-sm">
+                    Uploaded <span className="font-bold">{uploadSuccess.file_path}</span> with <span className="font-bold">{uploadSuccess.row_count}</span> rows.
+                  </div>
+                )}
+                <button
+                  className="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold w-fit disabled:opacity-60"
+                  style={{ marginTop: 8 }}
+                  disabled={!uploadSuccess || pipelineLoading}
+                  onClick={async () => {
+                    setPipelineError(null);
+                    setPipelineResult(null);
+                    setPipelineLoading(true);
+                    try {
+                      const res = await fetch(`${API_BASE}/pipeline/run`, { method: 'POST' });
+                      const data = await res.json();
+                      if (!res.ok || data.status !== 'success') {
+                        setPipelineError(data.detail || 'Pipeline run failed.');
+                        setPipelineResult(null);
+                      } else {
+                        setPipelineResult(data);
+                        setPipelineError(null);
+                        // Refresh dashboard data after pipeline run
+                        setLoading(true);
+                        setError(null);
+                        Promise.all([
+                          fetch(`${API_BASE}/dashboard/pipeline-status`).then((r) => r.json()),
+                          fetch(`${API_BASE}/dashboard/summary`).then((r) => r.json()),
+                          fetch(`${API_BASE}/dashboard/model-comparison`).then((r) => r.json()),
+                        ])
+                          .then(([pipelineData, summaryData, comparisonData]) => {
+                            setPipeline(pipelineData);
+                            setSummary(summaryData);
+                            setComparison(comparisonData);
+                          })
+                          .catch(() => {
+                            setError('Unable to refresh analytics data after pipeline run.');
+                          })
+                          .finally(() => setLoading(false));
+                      }
+                    } catch (err) {
+                      setPipelineError('Pipeline run failed.');
+                      setPipelineResult(null);
+                    } finally {
+                      setPipelineLoading(false);
+                    }
+                  }}
+                >
+                  {pipelineLoading ? 'Running Pipeline…' : 'Run Pipeline'}
+                </button>
+                {pipelineError && (
+                  <div className="text-rose-400 text-sm mt-1">
+                    {typeof pipelineError === 'string' ? pipelineError : <pre className="whitespace-pre-wrap">{JSON.stringify(pipelineError, null, 2)}</pre>}
+                  </div>
+                )}
+                {pipelineResult && (
+                  <div className="mt-2">
+                    {pipelineResult.status === 'success' ? (
+                      <div className="text-emerald-300 text-sm mb-2">Pipeline completed successfully.</div>
+                    ) : (
+                      <div className="text-rose-400 text-sm mb-2">
+                        Pipeline failed.<br />
+                        {pipelineResult.failed_step && (
+                          <>
+                            <span className="font-semibold">Failed step:</span> {pipelineResult.failed_step}<br />
+                          </>
+                        )}
+                        {pipelineResult.script && (
+                          <>
+                            <span className="font-semibold">Script:</span> {pipelineResult.script}<br />
+                          </>
+                        )}
+                        {pipelineResult.returncode !== undefined && (
+                          <>
+                            <span className="font-semibold">Return code:</span> {pipelineResult.returncode}<br />
+                          </>
+                        )}
+                        {pipelineResult.stderr && (
+                          <>
+                            <span className="font-semibold">Error output:</span>
+                            <pre className="bg-gray-900 text-rose-200 rounded p-2 mt-1 overflow-x-auto max-h-40">{pipelineResult.stderr}</pre>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {/* Collapsible stdout/stderr */}
+                    {(pipelineResult.stdout || pipelineResult.stderr) && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-slate-300 underline">Show pipeline output</summary>
+                        {pipelineResult.stdout && (
+                          <div className="mt-1">
+                            <span className="font-semibold text-slate-400">stdout:</span>
+                            <pre className="bg-gray-900 text-slate-200 rounded p-2 mt-1 overflow-x-auto max-h-40">{pipelineResult.stdout}</pre>
+                          </div>
+                        )}
+                        {pipelineResult.stderr && (
+                          <div className="mt-1">
+                            <span className="font-semibold text-slate-400">stderr:</span>
+                            <pre className="bg-gray-900 text-rose-200 rounded p-2 mt-1 overflow-x-auto max-h-40">{pipelineResult.stderr}</pre>
+                          </div>
+                        )}
+                        {/* Show raw object for debugging if needed */}
+                        {typeof pipelineResult === 'object' && (
+                          <details className="mt-2">
+                            <summary className="cursor-pointer text-slate-400 underline">Show raw result JSON</summary>
+                            <pre className="bg-gray-900 text-slate-400 rounded p-2 mt-1 overflow-x-auto max-h-40">{JSON.stringify(pipelineResult, null, 2)}</pre>
+                          </details>
+                        )}
+                      </details>
+                    )}
+                  </div>
+                )}
+                <div className="text-xs text-slate-400 mt-2">
+                  <span className="font-semibold">Note:</span> Upload a new wildlife incident CSV to the raw data layer. After upload, click <span className="font-bold">Run Pipeline</span> to retrain the model and refresh analytics. Only .csv files are accepted.
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
