@@ -66,6 +66,36 @@ def get_prediction_collection():
     return db["predictions"]
 
 
+def get_pipeline_runs_collection():
+    """Get pipeline_runs collection from MongoDB."""
+    db = get_database()
+
+    if db is None:
+        return None
+
+    return db["pipeline_runs"]
+
+
+def get_model_comparisons_collection():
+    """Get model_comparisons collection from MongoDB."""
+    db = get_database()
+
+    if db is None:
+        return None
+
+    return db["model_comparisons"]
+
+
+def get_dataset_uploads_collection():
+    """Get dataset_uploads collection from MongoDB."""
+    db = get_database()
+
+    if db is None:
+        return None
+
+    return db["dataset_uploads"]
+
+
 def close_connection():
     """Close MongoDB connection."""
     global _client, _db

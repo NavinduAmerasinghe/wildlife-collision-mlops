@@ -1,10 +1,11 @@
-"""
+﻿"""
 Model comparison pipeline runner for wildlife collision MLOps project.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from model.compare_models import compare_models
+from db.mongo_client import get_model_comparisons_collection
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,7 +34,33 @@ def save_comparison_metadata(batch_id, comparison_info, log_dir=None):
         json.dump(metadata, f, indent=2)
     print(f"[INFO] Saved model comparison metadata to {file_path}")
     print(f"[INFO] Comparison metadata absolute path: {file_path.resolve()}")
-    return str(file_path)
+    return metadata
+
+
+def store_comparison_metadata_in_mongodb(metadata):
+    """
+    Store model comparison metadata in MongoDB.
+    Non-blocking: logs warning if MongoDB is unavailable.
+    """
+    try:
+        collection = get_model_comparisons_collection()
+        if collection is not None:
+            print("[DEBUG] Metadata to insert:", metadata)
+            doc = {
+                "created_at": datetime.now(timezone.utc),
+                "batch_id": metadata.get("batch_id"),
+                "selected_best_model": metadata.get("selected_best_model"),
+                "logistic_regression": metadata.get("logistic_regression_metrics"),
+                "random_forest": metadata.get("random_forest_metrics"),
+                "saved_model_path": metadata.get("saved_model_path"),
+                "status": metadata.get("status")
+            }
+            collection.insert_one(doc)
+            print(f"[INFO] Stored model comparison metadata in MongoDB")
+        else:
+            print("[WARNING] MongoDB collection is None")
+    except Exception as e:
+        print(f"[WARNING] Failed to store metadata in MongoDB: {e}")
 
 def main():
     print("\n=== Wildlife Collision Model Comparison Pipeline ===\n")
@@ -43,8 +70,11 @@ def main():
     # Run comparison pipeline
     comparison_info = compare_models(batch_id)
 
-    # Save comparison metadata
-    save_comparison_metadata(batch_id, comparison_info)
+    # Save comparison metadata to JSON file and get metadata dict
+    metadata = save_comparison_metadata(batch_id, comparison_info)
+    
+    # Store comparison metadata in MongoDB (non-blocking)
+    store_comparison_metadata_in_mongodb(metadata)
 
     # Print summary
     if comparison_info.get('status') == 'success':

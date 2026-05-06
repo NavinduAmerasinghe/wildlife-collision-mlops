@@ -12,7 +12,7 @@ from api.schemas import PredictionRequest, PredictionResponse
 from api.dashboard_routes import router as dashboard_router
 from api.data_routes import router as data_router
 from api.pipeline_routes import router as pipeline_router
-from db.mongo_client import get_prediction_collection
+from db.mongo_client import get_prediction_collection, get_dataset_uploads_collection, get_pipeline_runs_collection, get_model_comparisons_collection
 import pandas as pd
 import numpy as np
 
@@ -116,3 +116,72 @@ def get_prediction_history(limit: int = 20):
         return {"predictions": predictions, "count": len(predictions)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction history: {e}")
+
+
+@app.get("/data/uploads/history")
+def get_dataset_uploads_history(limit: int = 20):
+    """
+    Retrieve the latest dataset upload records from MongoDB.
+    Returns up to `limit` uploads sorted by created_at descending.
+    """
+    try:
+        collection = get_dataset_uploads_collection()
+        if collection is None:
+            raise HTTPException(status_code=503, detail="MongoDB unavailable")
+        
+        # Find latest uploads, sorted by created_at descending
+        uploads = list(collection.find().sort("created_at", -1).limit(limit))
+        
+        # Convert ObjectId to string for JSON serialization
+        for upload in uploads:
+            upload["_id"] = str(upload["_id"])
+        
+        return {"uploads": uploads, "count": len(uploads)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve upload history: {e}")
+
+
+@app.get("/pipeline/runs")
+def get_pipeline_runs(limit: int = 20):
+    """
+    Retrieve the latest pipeline run records from MongoDB.
+    Returns up to `limit` pipeline runs sorted by created_at descending.
+    """
+    try:
+        collection = get_pipeline_runs_collection()
+        if collection is None:
+            raise HTTPException(status_code=503, detail="MongoDB unavailable")
+        
+        # Find latest pipeline runs, sorted by created_at descending
+        runs = list(collection.find().sort("created_at", -1).limit(limit))
+        
+        # Convert ObjectId to string for JSON serialization
+        for run in runs:
+            run["_id"] = str(run["_id"])
+        
+        return {"pipeline_runs": runs, "count": len(runs)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve pipeline runs: {e}")
+
+
+@app.get("/models/comparisons/history")
+def get_model_comparisons_history(limit: int = 20):
+    """
+    Retrieve the latest model comparison records from MongoDB.
+    Returns up to `limit` model comparisons sorted by created_at descending.
+    """
+    try:
+        collection = get_model_comparisons_collection()
+        if collection is None:
+            raise HTTPException(status_code=503, detail="MongoDB unavailable")
+        
+        # Find latest model comparisons, sorted by created_at descending
+        comparisons = list(collection.find().sort("created_at", -1).limit(limit))
+        
+        # Convert ObjectId to string for JSON serialization
+        for comparison in comparisons:
+            comparison["_id"] = str(comparison["_id"])
+        
+        return {"model_comparisons": comparisons, "count": len(comparisons)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve model comparisons: {e}")

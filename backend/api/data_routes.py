@@ -5,8 +5,9 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import pandas as pd
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import shutil
+from db.mongo_client import get_dataset_uploads_collection
 
 router = APIRouter()
 
@@ -58,7 +59,27 @@ async def upload_wildlife_incidents(file: UploadFile = File(...)):
     with open(save_path, "wb") as out_file:
         shutil.copyfileobj(file.file, out_file)
 
-    # 5. Return JSON response
+    # 5. Store upload metadata in MongoDB (non-blocking)
+    try:
+        collection = get_dataset_uploads_collection()
+        if collection is not None:
+            upload_doc = {
+                "created_at": datetime.now(timezone.utc),
+                "dataset_type": "wildlife_incidents",
+                "original_filename": file.filename,
+                "saved_filename": save_name,
+                "file_path": str(save_path),
+                "row_count": len(df),
+                "status": "uploaded"
+            }
+            collection.insert_one(upload_doc)
+            print(f"[INFO] Stored upload metadata in MongoDB")
+        else:
+            print("[WARNING] MongoDB unavailable, upload metadata not stored")
+    except Exception as e:
+        print(f"[WARNING] Failed to store upload metadata in MongoDB: {e}")
+
+    # 6. Return JSON response
     return JSONResponse({
         "status": "success",
         "message": "Wildlife dataset uploaded successfully",
