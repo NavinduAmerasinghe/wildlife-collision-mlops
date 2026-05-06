@@ -1,5 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
+import { ModelMetricsChart } from '../components/ModelMetricsChart';
+import { DatasetUploadHistoryChart } from '../components/DatasetUploadHistoryChart';
 
 // --- Types ---
 type PipelineStatus = {
@@ -33,6 +35,13 @@ type ModelComparison = {
   random_forest: ModelMetrics | null;
 };
 
+type Upload = {
+  _id: string;
+  created_at: string;
+  row_count: number;
+  [key: string]: unknown;
+};
+
 const API_BASE = 'http://127.0.0.1:8000';
 
 function formatPercent(value: number | null | undefined): string {
@@ -63,6 +72,7 @@ const AnalyticsandTrends: React.FC = () => {
   const [pipeline, setPipeline] = useState<PipelineStatus | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [comparison, setComparison] = useState<ModelComparison | null>(null);
+  const [uploadsData, setUploadsData] = useState<Upload[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Upload & pipeline state
@@ -81,11 +91,13 @@ const AnalyticsandTrends: React.FC = () => {
       fetch(`${API_BASE}/dashboard/pipeline-status`).then((r) => r.json()),
       fetch(`${API_BASE}/dashboard/summary`).then((r) => r.json()),
       fetch(`${API_BASE}/dashboard/model-comparison`).then((r) => r.json()),
+      fetch(`${API_BASE}/data/uploads/history`).then((r) => r.json()),
     ])
-      .then(([pipelineData, summaryData, comparisonData]) => {
+      .then(([pipelineData, summaryData, comparisonData, uploadsResponse]) => {
         setPipeline(pipelineData);
         setSummary(summaryData);
         setComparison(comparisonData);
+        setUploadsData(uploadsResponse.uploads || null);
       })
       .catch((err) => {
         setError('Unable to load analytics data. Backend may be offline.');
@@ -185,6 +197,19 @@ const AnalyticsandTrends: React.FC = () => {
               </div>
             </div>
 
+            {/* 3.5. Model Metrics Chart */}
+            {comparison && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-slate-100">Model Metrics Chart</h2>
+                <div className={`rounded-2xl p-6 shadow ${theme === 'dark' ? cardDark : cardLight}`}>
+                  <ModelMetricsChart
+                    logisticRegression={comparison.logistic_regression}
+                    randomForest={comparison.random_forest}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 4. Research Interpretation Panel */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 text-slate-100">Research Interpretation Panel</h2>
@@ -244,6 +269,16 @@ const AnalyticsandTrends: React.FC = () => {
                   </div>
                 </div> */}
               </>
+            )}
+
+            {/* 5.5. Dataset Upload History Chart */}
+            {uploadsData && uploadsData.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-slate-100">Dataset Upload History</h2>
+                <div className={`rounded-2xl p-6 shadow ${theme === 'dark' ? cardDark : cardLight}`}>
+                  <DatasetUploadHistoryChart uploads={uploadsData} />
+                </div>
+              </div>
             )}
 
             {/* 6. Dataset Upload & Retraining */}

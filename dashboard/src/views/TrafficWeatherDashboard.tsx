@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Loader, CheckCircle, XCircle, Activity, Database, Brain, GitCompare, Zap, Layers } from "lucide-react";
+import { PredictionHistoryChart } from "../components/PredictionHistoryChart";
 
 const API_BASE = "http://127.0.0.1:8000";
 
@@ -56,6 +57,15 @@ type PredictResponse = {
   probability: number | null;
 };
 
+type Prediction = {
+  _id: string;
+  response?: {
+    risk_label: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
 const defaultPredict: PredictRequest = {
   temperature: 5,
   precipitation: 2,
@@ -92,6 +102,7 @@ const TrafficWeatherDashboard: React.FC = () => {
   const [predictError, setPredictError] = useState<string | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [scenarioExplanation, setScenarioExplanation] = useState<string>("");
+  const [predictionsData, setPredictionsData] = useState<Prediction[] | null>(null);
 
   const scenarios: { key: string; label: string; emoji: string; payload: PredictRequest; explanation: string }[] = [
     {
@@ -160,6 +171,9 @@ const TrafficWeatherDashboard: React.FC = () => {
     fetch(`${API_BASE}/dashboard/model-comparison`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setComparison(data); setComparisonError(null); }).catch(() => setComparisonError("Could not load model comparison")).finally(() => setComparisonLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/predictions/history`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setPredictionsData(data.predictions || null); }).catch(() => { /* silently fail for predictions history */ });
+  }, []);
   const handlePredictChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPredictForm(prev => ({ ...prev, [name]: Number(value) }));
@@ -457,6 +471,16 @@ const TrafficWeatherDashboard: React.FC = () => {
             )}
           </div>
         </section>
+
+        {/* Prediction History Chart */}
+        {predictionsData && predictionsData.length > 0 && (
+          <section>
+            <SectionHeader title="Prediction History Chart" subtitle="Distribution of recent predictions by risk level" />
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+              <PredictionHistoryChart predictions={predictionsData} />
+            </div>
+          </section>
+        )}
 
       </div>
     </div>

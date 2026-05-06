@@ -11,7 +11,7 @@ function App() {
     <SettingsProvider> 
       <Routes>
         <Route path="/" element={<ViewContainer/>}>
-          <Route path="/analytics" element={<AnalyticsAndTrends/>}/>
+          <Route path="/" element={<AnalyticsAndTrends/>}/>
           <Route path="/liveTraffic" element={<TrafficWeatherDashboard/>}/>
           <Route path="/alerts" element={<Alerts/>}/>
           <Route path="/cameras" element={<Cameras/>}/>

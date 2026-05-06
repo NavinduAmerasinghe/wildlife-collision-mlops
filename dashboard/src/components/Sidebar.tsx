@@ -61,7 +61,7 @@ export default function Sidebar() {
 
       {/* Nav section */}
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
-        <NavLink className={navLinkClass} to="/analytics" end>
+        <NavLink className={navLinkClass} to="/" end>
           <NavIconAnalytics /> Analytics & MLOps
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
