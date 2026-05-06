@@ -1,0 +1,28 @@
+{
+  "batch_id": "20260506T064413",
+  "created_at": "2026-05-06T06:44:34+00:00",
+  "gold_file_used": "/app/data/gold/gold_dataset_20260506T064400.csv",
+  "features_used": [
+    "temperature",
+    "precipitation",
+    "wind_speed",
+    "visibility",
+    "speed_limit",
+    "hour",
+    "month",
+    "is_night",
+    "is_weekend",
+    "high_precipitation"
+  ],
+  "row_count": 7,
+  "train_row_count": 5,
+  "test_row_count": 2,
+  "metrics": {
+    "accuracy": 0.5,
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1_score": 0.6666666666666666
+  },
+  "model_path": "/app/models/wildlife_risk_model_20260506T064413.pkl",
+  "status": "success"
+}

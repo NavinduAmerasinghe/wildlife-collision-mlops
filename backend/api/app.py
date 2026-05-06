@@ -4,12 +4,15 @@ FastAPI app for wildlife collision risk prediction.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
+from bson import ObjectId
 
 from api.model_loader import load_latest_model
 from api.schemas import PredictionRequest, PredictionResponse
 from api.dashboard_routes import router as dashboard_router
 from api.data_routes import router as data_router
 from api.pipeline_routes import router as pipeline_router
+from db.mongo_client import get_prediction_collection
 import pandas as pd
 import numpy as np
 
@@ -64,6 +67,52 @@ def predict(request: PredictionRequest):
         else:
             proba = None
         risk_label = "high_risk" if pred == 1 else "low_risk"
-        return PredictionResponse(predicted_class=int(pred), risk_label=risk_label, probability=proba)
+        response = PredictionResponse(predicted_class=int(pred), risk_label=risk_label, probability=proba)
+        
+        # Store prediction in MongoDB (non-blocking)
+        try:
+            collection = get_prediction_collection()
+            if collection is not None:
+                prediction_doc = {
+                    "created_at": datetime.now(timezone.utc),
+                    "request": request.dict(),
+                    "response": {
+                        "predicted_class": int(pred),
+                        "risk_label": risk_label,
+                        "probability": proba
+                    },
+                    "model_version": model_load_error or "unknown"
+                }
+                collection.insert_one(prediction_doc)
+                print(f"[INFO] Stored prediction in MongoDB")
+            else:
+                print("[WARNING] MongoDB unavailable, prediction not stored")
+        except Exception as e:
+            print(f"[WARNING] Failed to store prediction in MongoDB: {e}")
+        
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
+
+
+@app.get("/predictions/history")
+def get_prediction_history(limit: int = 20):
+    """
+    Retrieve the latest prediction records from MongoDB.
+    Returns up to `limit` predictions sorted by created_at descending.
+    """
+    try:
+        collection = get_prediction_collection()
+        if collection is None:
+            raise HTTPException(status_code=503, detail="MongoDB unavailable")
+        
+        # Find latest predictions, sorted by created_at descending
+        predictions = list(collection.find().sort("created_at", -1).limit(limit))
+        
+        # Convert ObjectId to string for JSON serialization
+        for pred in predictions:
+            pred["_id"] = str(pred["_id"])
+        
+        return {"predictions": predictions, "count": len(predictions)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve prediction history: {e}")
