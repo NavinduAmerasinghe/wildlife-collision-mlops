@@ -1,0 +1,10 @@
+venv/
+.git/
+__pycache__/
+.pytest_cache/
+mlruns/
+*.pyc
+*.pkl
+node_modules/
+dashboard/node_modules/
+.dvc/cache/
