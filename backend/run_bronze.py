@@ -44,6 +44,9 @@ def main():
             source_metadata[name] = {"status": "failed", "row_count": 0, "file_path": None}
             continue
 
+        if name == "wildlife_incidents":
+            print(f"[DEBUG] Wildlife rows loaded from ingestion: {len(df)}")
+        
         try:
             if df is None or df.empty:
                 print(f"[INFO] {name} is empty. Skipping save.")
@@ -51,6 +54,8 @@ def main():
             else:
                 saved_path = save_to_bronze(df, name, batch_id)
                 source_metadata[name] = {"status": "success", "row_count": len(df), "file_path": saved_path}
+                if name == "wildlife_incidents":
+                    print(f"[DEBUG] Wildlife rows saved to bronze: {len(df)}")
         except Exception as e:
             print(f"[ERROR] Failed to save {name} to bronze: {e}")
             source_metadata[name] = {"status": "failed", "row_count": 0, "file_path": None}

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 from bson import ObjectId
 
-from api.model_loader import load_latest_model
+from api.model_loader import load_latest_model, get_loaded_model_version
 from api.schemas import PredictionRequest, PredictionResponse
 from api.dashboard_routes import router as dashboard_router
 from api.data_routes import router as data_router
@@ -68,6 +68,8 @@ def predict(request: PredictionRequest):
             proba = None
         risk_label = "high_risk" if pred == 1 else "low_risk"
         response = PredictionResponse(predicted_class=int(pred), risk_label=risk_label, probability=proba)
+        model_version = get_loaded_model_version() or "unknown"
+        print(f"[INFO] Prediction using model version: {model_version}")
         
         # Store prediction in MongoDB (non-blocking)
         try:
@@ -81,7 +83,7 @@ def predict(request: PredictionRequest):
                         "risk_label": risk_label,
                         "probability": proba
                     },
-                    "model_version": model_load_error or "unknown"
+                    "model_version": model_version
                 }
                 collection.insert_one(prediction_doc)
                 print(f"[INFO] Stored prediction in MongoDB")

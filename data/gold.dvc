@@ -1,6 +1,6 @@
 outs:
-- md5: 183b97a1fefeedc861f4d1efa9736527.dir
-  size: 3444
-  nfiles: 3
+- md5: 59fc978a048e31ac52ad56075dfce1a3.dir
+  size: 26732068
+  nfiles: 30
   hash: md5
   path: gold

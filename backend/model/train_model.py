@@ -13,6 +13,8 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 
 from model.model_utils import find_latest_gold_csv, GOLD_DIR
 
@@ -47,6 +49,7 @@ def train_model(batch_id):
 
     try:
         df = pd.read_csv(gold_file)
+        print(f"[DEBUG] Gold dataset rows loaded for training: {len(df)}")
 
         if "high_risk_target" not in df.columns:
             print("[ERROR] Missing high_risk_target column.")
@@ -81,9 +84,10 @@ def train_model(batch_id):
 
         df = df.dropna(subset=["high_risk_target"])
 
-        for feature in features_used:
-            if df[feature].isnull().any():
-                df[feature] = df[feature].fillna(df[feature].median())
+        # Print missing values before imputation
+        print(f"[DEBUG] Missing values before imputation:")
+        missing_counts = df[features_used].isna().sum()
+        print(missing_counts)
 
         if len(df) < 5:
             print("[ERROR] Not enough rows to train.")
@@ -103,10 +107,17 @@ def train_model(batch_id):
             random_state=42,
         )
 
-        model = LogisticRegression(max_iter=200)
-        model.fit(X_train, y_train)
+        # Create a pipeline with imputer and logistic regression
+        model_pipeline = Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("logistic_regression", LogisticRegression(max_iter=200))
+        ])
 
-        y_pred = model.predict(X_test)
+        # Fit the pipeline on training data (imputer is fitted on X_train)
+        model_pipeline.fit(X_train, y_train)
+
+        # Predict on test data (uses the fitted imputer)
+        y_pred = model_pipeline.predict(X_test)
 
         metrics = {
             "accuracy": accuracy_score(y_test, y_pred),
@@ -121,17 +132,18 @@ def train_model(batch_id):
         model_path = model_folder / f"wildlife_risk_model_{batch_id}.pkl"
 
         with open(model_path, "wb") as f:
-            pickle.dump(model, f)
+            pickle.dump(model_pipeline, f)
 
-        print(f"[OK] Model saved to {model_path}")
+        print(f"[OK] Model pipeline saved to {model_path}")
         print(f"[INFO] Model absolute path: {model_path.resolve()}")
 
         with mlflow.start_run(run_name=f"train_{batch_id}"):
             mlflow.log_param("batch_id", batch_id)
-            mlflow.log_param("model_type", "logistic_regression")
+            mlflow.log_param("model_type", "logistic_regression_with_imputer")
             mlflow.log_param("gold_file_used", str(gold_file))
             mlflow.log_param("features_used", ",".join(features_used))
             mlflow.log_param("feature_count", len(features_used))
+            mlflow.log_param("imputer_strategy", "median")
             mlflow.log_param("model_path", str(model_path))
 
             mlflow.log_metric("row_count", len(df))
@@ -142,7 +154,7 @@ def train_model(batch_id):
                 mlflow.log_metric(metric_name, float(metric_value))
 
             mlflow.sklearn.log_model(
-                sk_model=model,
+                sk_model=model_pipeline,
                 name="model",
                 input_example=X_train.head(1),
             )

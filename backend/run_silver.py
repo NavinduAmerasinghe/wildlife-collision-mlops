@@ -49,15 +49,29 @@ def main():
 
     # Process wildlife incidents
     print("[STEP] Processing wildlife incidents...")
-    source_metadata["wildlife_incidents"] = process_wildlife(batch_id, PROJECT_ROOT)
+    wildlife_result = process_wildlife(batch_id, PROJECT_ROOT)
+    source_metadata["wildlife_incidents"] = wildlife_result
+    if wildlife_result["status"] == "success":
+        print(f"[DEBUG] Wildlife silver row count: {wildlife_result['row_count']}")
+    else:
+        raise RuntimeError(
+            f"Wildlife Silver processing failed with status '{wildlife_result['status']}'. "
+            "Stopping Silver pipeline to prevent Gold from using stale Silver data."
+        )
 
     # Process weather
     print("[STEP] Processing weather data...")
-    source_metadata["weather"] = process_weather(batch_id, PROJECT_ROOT)
+    weather_result = process_weather(batch_id, PROJECT_ROOT)
+    source_metadata["weather"] = weather_result
+    if weather_result["status"] == "success":
+        print(f"[DEBUG] Weather silver row count: {weather_result['row_count']}")
 
     # Process road context
     print("[STEP] Processing road context data...")
-    source_metadata["road_context"] = process_road_context(batch_id, PROJECT_ROOT)
+    road_result = process_road_context(batch_id, PROJECT_ROOT)
+    source_metadata["road_context"] = road_result
+    if road_result["status"] == "success":
+        print(f"[DEBUG] Road context silver row count: {road_result['row_count']}")
 
     # Save Silver batch metadata
     save_silver_metadata(batch_id, source_metadata)

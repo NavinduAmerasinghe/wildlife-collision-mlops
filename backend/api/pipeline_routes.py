@@ -1,7 +1,7 @@
 """
 Pipeline orchestration routes for wildlife-collision-mlops project.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from pathlib import Path
@@ -16,13 +16,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 BACKEND_DIR = PROJECT_ROOT / "backend"
-# Bronze runner is backend/ingestion/batch_metadata.py (or another ingestion script if found)
-BRONZE_RUNNER = BACKEND_DIR / "ingestion" / "batch_metadata.py"
 PIPELINE_STEPS = [
-    {"name": "Bronze ingestion", "script": BRONZE_RUNNER},
-    {"name": "Silver processing", "script": BACKEND_DIR / "run_silver.py"},
-    {"name": "Gold dataset creation", "script": BACKEND_DIR / "run_gold.py"},
-    {"name": "Model comparison/training", "script": BACKEND_DIR / "run_compare_models.py"},
+    {"name": "run_bronze.py", "script": BACKEND_DIR / "run_bronze.py"},
+    {"name": "run_silver.py", "script": BACKEND_DIR / "run_silver.py"},
+    {"name": "run_gold.py", "script": BACKEND_DIR / "run_gold.py"},
+    {"name": "run_train.py", "script": BACKEND_DIR / "run_train.py"},
+    {"name": "run_compare_models.py", "script": BACKEND_DIR / "run_compare_models.py"},
 ]
 
 @router.post("/pipeline/run")
@@ -33,22 +32,23 @@ def run_pipeline():
     steps_run = []
     for step in PIPELINE_STEPS:
         script_path = step["script"]
+        print(f"[PIPELINE API] Running script: {script_path.name}")
         if not script_path.exists():
-            raise HTTPException(
+            return JSONResponse(
                 status_code=500,
-                detail={
+                content={
                     "status": "error",
                     "failed_step": step["name"],
                     "script": str(script_path),
                     "stdout": "",
                     "stderr": f"Pipeline script not found: {script_path}",
-                    "returncode": None
-                }
+                    "returncode": None,
+                },
             )
         try:
             result = subprocess.run(
                 [sys.executable, str(script_path)],
-                cwd=PROJECT_ROOT,
+                cwd=BACKEND_DIR,
                 capture_output=True,
                 text=True,
                 check=True
@@ -61,17 +61,16 @@ def run_pipeline():
                 "returncode": result.returncode
             })
         except subprocess.CalledProcessError as e:
-            # On failure, return error info
-            raise HTTPException(
+            return JSONResponse(
                 status_code=500,
-                detail={
+                content={
                     "status": "error",
                     "failed_step": step["name"],
                     "script": str(script_path),
                     "stdout": e.stdout,
                     "stderr": e.stderr,
-                    "returncode": e.returncode
-                }
+                    "returncode": e.returncode,
+                },
             )
     return JSONResponse({
         "status": "success",

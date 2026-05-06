@@ -5,6 +5,7 @@ from fastapi import APIRouter
 
 from pathlib import Path
 from .dashboard_utils import find_latest_json_file, load_json_file
+from db.mongo_client import get_dataset_uploads_collection
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -47,10 +48,25 @@ def dashboard_summary():
     debug_print_path("comparison_file", comparison_file)
     comparison = load_json_file(comparison_file)
     features = comparison.get("features_used", []) if comparison else []
+
+    latest_upload_row_count = None
+    latest_upload_filename = None
+    try:
+        collection = get_dataset_uploads_collection()
+        if collection is not None:
+            latest_upload = collection.find_one(sort=[("created_at", -1)])
+            if latest_upload:
+                latest_upload_row_count = latest_upload.get("row_count")
+                latest_upload_filename = latest_upload.get("saved_filename") or latest_upload.get("original_filename")
+    except Exception as e:
+        print(f"[WARNING] Failed to read latest dataset upload metadata: {e}")
+
     return {
         "latest_gold_batch_id": gold.get("batch_id") if gold else None,
         "latest_gold_row_count": gold.get("row_count") if gold else None,
         "latest_gold_created_at": gold.get("created_at") if gold else None,
+        "latest_uploaded_dataset_row_count": latest_upload_row_count,
+        "latest_uploaded_dataset_filename": latest_upload_filename,
         "feature_count": len(features),
         "selected_best_model": (comparison.get("selected_best_model") if comparison else None),
     }

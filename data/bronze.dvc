@@ -1,6 +1,6 @@
 outs:
-- md5: 14007784e3cd191d49f0a1c59d5b8378.dir
-  size: 1658
-  nfiles: 6
+- md5: 5b2f62d6ad9c566b75d47e676724c197.dir
+  size: 7939764
+  nfiles: 36
   hash: md5
   path: bronze

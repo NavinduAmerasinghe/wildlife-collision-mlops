@@ -46,6 +46,10 @@ def main():
 
     # Build Gold dataset
     gold_info = build_gold(batch_id)
+    
+    # Log row count after build
+    if gold_info["status"] == "success":
+        print(f"[DEBUG] Gold dataset row count: {gold_info['row_count']}")
 
     # Save Gold batch metadata
     save_gold_metadata(batch_id, gold_info)

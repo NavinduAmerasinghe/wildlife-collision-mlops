@@ -24,11 +24,16 @@ def run_stage(script_name: str):
     print(f"Running {script_name}")
     print(f"==============================\n")
 
-    subprocess.run(
-        [sys.executable, script_name],
-        cwd=BACKEND_DIR,
-        check=True
-    )
+    try:
+        subprocess.run(
+            [sys.executable, script_name],
+            cwd=BACKEND_DIR,
+            check=True
+        )
+        print(f"\n[OK] {script_name} completed successfully\n")
+    except subprocess.CalledProcessError as e:
+        print(f"\n[ERROR] {script_name} failed with exit code {e.returncode}\n")
+        raise
 
 
 def store_pipeline_run(run_id, status, stages=None, failed_stage=None, error=None):
@@ -67,23 +72,32 @@ def store_pipeline_run(run_id, status, stages=None, failed_stage=None, error=Non
 def main():
     stages = ["bronze", "silver", "gold", "train"]
     run_id = generate_run_id()
+    current_stage = "not_started"
+    print(f"\n[PIPELINE START] Pipeline run_id: {run_id}\n")
     try:
-        for stage in stages:
+        for i, stage in enumerate(stages, 1):
+            current_stage = stage
+            print(f"\n[PIPELINE] Stage {i}/{len(stages)}: {stage}")
             run_stage(f"run_{stage}.py")
+            print(f"[PIPELINE] Stage {stage} completed successfully")
         
-        print("\n[COMPLETE] Full MLOps pipeline finished successfully.\n")
+        print("\n" + "="*50)
+        print("[COMPLETE] Full MLOps pipeline finished successfully.")
+        print("="*50 + "\n")
         store_pipeline_run(run_id=run_id, status="success", stages=stages)
     except subprocess.CalledProcessError as e:
-        failed_stage = "unknown"
+        failed_stage = current_stage
         error_msg = str(e)
         print(f"\n[ERROR] Pipeline failed at stage: {failed_stage}")
         print(f"[ERROR] {error_msg}\n")
         store_pipeline_run(run_id=run_id, status="failed", failed_stage=failed_stage, error=error_msg)
         sys.exit(1)
     except Exception as e:
+        failed_stage = current_stage
         error_msg = str(e)
-        print(f"\n[ERROR] Pipeline failed: {error_msg}\n")
-        store_pipeline_run(run_id=run_id, status="failed", failed_stage="unknown", error=error_msg)
+        print(f"\n[ERROR] Pipeline failed at stage: {failed_stage}")
+        print(f"[ERROR] {error_msg}\n")
+        store_pipeline_run(run_id=run_id, status="failed", failed_stage=failed_stage, error=error_msg)
         sys.exit(1)
 
 

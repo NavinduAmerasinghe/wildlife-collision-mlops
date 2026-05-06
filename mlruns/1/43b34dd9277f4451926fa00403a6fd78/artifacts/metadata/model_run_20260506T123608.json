@@ -1,0 +1,12 @@
+{
+  "batch_id": "20260506T123608",
+  "created_at": "2026-05-06T12:36:10+00:00",
+  "gold_file_used": "C:\\Users\\user\\Desktop\\Project\\wildlife-collision-mlops\\data\\gold\\gold_dataset_20260506T123559.csv",
+  "features_used": null,
+  "row_count": 0,
+  "train_row_count": null,
+  "test_row_count": null,
+  "metrics": null,
+  "model_path": null,
+  "status": "error"
+}
