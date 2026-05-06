@@ -14,6 +14,11 @@ from db.mongo_client import get_pipeline_runs_collection
 BACKEND_DIR = Path(__file__).resolve().parent
 
 
+def generate_run_id():
+    """Generate a timestamp-based unique pipeline run id."""
+    return datetime.utcnow().strftime("%Y%m%dT%H%M%S%f")
+
+
 def run_stage(script_name: str):                                                   
     print(f"\n==============================")
     print(f"Running {script_name}")
@@ -26,7 +31,7 @@ def run_stage(script_name: str):
     )
 
 
-def store_pipeline_run(status, stages=None, failed_stage=None, error=None):
+def store_pipeline_run(run_id, status, stages=None, failed_stage=None, error=None):
     """
     Store pipeline run metadata in MongoDB.
     Non-blocking: logs warning if MongoDB is unavailable.
@@ -37,13 +42,15 @@ def store_pipeline_run(status, stages=None, failed_stage=None, error=None):
             if status == "success":
                 doc = {
                     "created_at": datetime.now(timezone.utc),
+                    "run_id": run_id,
                     "status": "success",
                     "stages": stages or ["bronze", "silver", "gold", "train"],
                     "message": "Full MLOps pipeline completed successfully"
                 }
-            else:  # failed
+            else:
                 doc = {
                     "created_at": datetime.now(timezone.utc),
+                    "run_id": run_id,
                     "status": "failed",
                     "failed_stage": failed_stage,
                     "error": error
@@ -59,23 +66,24 @@ def store_pipeline_run(status, stages=None, failed_stage=None, error=None):
 
 def main():
     stages = ["bronze", "silver", "gold", "train"]
+    run_id = generate_run_id()
     try:
         for stage in stages:
             run_stage(f"run_{stage}.py")
         
         print("\n[COMPLETE] Full MLOps pipeline finished successfully.\n")
-        store_pipeline_run(status="success", stages=stages)
+        store_pipeline_run(run_id=run_id, status="success", stages=stages)
     except subprocess.CalledProcessError as e:
-        failed_stage = stages[stages.index(e.args[0].split("_")[1].split(".")[0])] if len(e.args) > 0 else "unknown"
+        failed_stage = "unknown"
         error_msg = str(e)
         print(f"\n[ERROR] Pipeline failed at stage: {failed_stage}")
         print(f"[ERROR] {error_msg}\n")
-        store_pipeline_run(status="failed", failed_stage=failed_stage, error=error_msg)
+        store_pipeline_run(run_id=run_id, status="failed", failed_stage=failed_stage, error=error_msg)
         sys.exit(1)
     except Exception as e:
         error_msg = str(e)
         print(f"\n[ERROR] Pipeline failed: {error_msg}\n")
-        store_pipeline_run(status="failed", failed_stage="unknown", error=error_msg)
+        store_pipeline_run(run_id=run_id, status="failed", failed_stage="unknown", error=error_msg)
         sys.exit(1)
 
 
