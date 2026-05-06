@@ -62,11 +62,11 @@ export default function Sidebar() {
       {/* Nav section */}
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
         <NavLink className={navLinkClass} to="/analytics" end>
-          <NavIconAnalytics /> Analytics & Route Prediction
+          <NavIconAnalytics /> Analytics & MLOps
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
         <NavLink className={navLinkClass} to="/liveTraffic" end>
-          <NavIconTraffic /> Smart Road Weather & Traffic Pred
+          <NavIconTraffic /> Smart Road Weather & Traffic
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
 

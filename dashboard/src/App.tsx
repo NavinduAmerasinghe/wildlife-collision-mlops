@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import ViewContainer from "./containers/ViewContainer";
 import AnalyticsAndTrends from './views/AnalyticsandTrends'
 import TrafficWeatherDashboard from './views/TrafficWeatherDashboard';
+import Alerts from './views/Alerts';
+import Cameras from './views/Cameras';
 import { SettingsProvider } from "./views/SettingsContext";
 
 function App() {
@@ -11,6 +13,8 @@ function App() {
         <Route path="/" element={<ViewContainer/>}>
           <Route path="/analytics" element={<AnalyticsAndTrends/>}/>
           <Route path="/liveTraffic" element={<TrafficWeatherDashboard/>}/>
+          <Route path="/alerts" element={<Alerts/>}/>
+          <Route path="/cameras" element={<Cameras/>}/>
         </Route>
       </Routes>
     </SettingsProvider>
