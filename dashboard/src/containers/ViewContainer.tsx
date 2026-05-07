@@ -4,14 +4,13 @@ import Sidebar from "../components/Sidebar";
 
 export default function ViewContainer() {
   return (
-    <div className="flex flex-col w-full h-full overflow-y-hidden">
-
-      <div className="flex w-full h-full">
+    <div className="flex w-full h-screen"> 
       <Sidebar />
-      <div className="flex w-full h-full items-center justify-center" >
-        <Outlet />
-      </div>
-      </div>
+      <main className="flex-1 overflow-y-auto"> 
+        <div className="min-h-full">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 }
