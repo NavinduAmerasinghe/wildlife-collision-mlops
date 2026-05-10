@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { NavLink, NavLinkProps } from "react-router-dom";
 import SettingsModal from "./SettingsModal";
+import logo from "../assets/logo.png";
 
 const navLinkClass: NavLinkProps["className"] = ({ isActive }) =>
   [
@@ -59,8 +60,8 @@ export default function Sidebar() {
         </span>
       </div>
 
-      {/* Nav section */}
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
+      {/* Nav section */}
         <NavLink className={navLinkClass} to="/" end>
           <NavIconAnalytics /> Analytics & MLOps
           {({ isActive }) => isActive && <PurpleDot />}
@@ -82,8 +83,12 @@ export default function Sidebar() {
           <NavIconCamera /> Cameras
           {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
+        
       </nav>
-
+        {/* Logo Watermark */}
+        <div className="mt-4 flex justify-center opacity-30 hover:opacity-50 transition-opacity">
+          <img src={logo} alt="System Logo" className="max-w-[120px] h-auto" />
+        </div>
       {/* Footer */}
       <div className="px-5 py-5 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-4 text-[18px]">
         <button
@@ -103,6 +108,8 @@ export default function Sidebar() {
           </div>
           <span className="ml-auto w-[8px] h-[8px] rounded-full bg-green-500" />
         </div>
+
+
       </div>
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </aside>
