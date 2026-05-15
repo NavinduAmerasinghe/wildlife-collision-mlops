@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Loader, CheckCircle, XCircle, Activity, Database, Brain, GitCompare, Zap, Layers } from "lucide-react";
 import { PredictionHistoryChart } from "../components/PredictionHistoryChart";
-
-const API_BASE = "http://127.0.0.1:8000";
+import apiClient from "../utils/apiClient";
 
 type PipelineStatus = {
   bronze_available: boolean;
@@ -143,9 +142,8 @@ const TrafficWeatherDashboard: React.FC = () => {
     setPredictError(null);
     setPredictResult(null);
     try {
-      const res = await fetch(`${API_BASE}/predict`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(scenario.payload) });
-      if (!res.ok) throw new Error("Prediction failed");
-      const data: PredictResponse = await res.json();
+      const res = await apiClient.post(`/predict`, scenario.payload);
+      const data: PredictResponse = res.data;
       setPredictResult(data);
       setScenarioExplanation(scenario.explanation);
     } catch (err: any) {
@@ -156,23 +154,23 @@ const TrafficWeatherDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetch(`${API_BASE}/health`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(d => { setApiStatus(d.status === "ok"); setApiStatusError(null); }).catch(() => { setApiStatus(false); setApiStatusError("Could not connect to API"); }).finally(() => setApiStatusLoading(false));
+    apiClient.get(`/health`).then(d => { setApiStatus(d.data.status === "ok"); setApiStatusError(null); }).catch(() => { setApiStatus(false); setApiStatusError("Could not connect to API"); }).finally(() => setApiStatusLoading(false));
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/dashboard/pipeline-status`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setPipeline(data); setPipelineError(null); }).catch(() => setPipelineError("Could not load pipeline status")).finally(() => setPipelineLoading(false));
+    apiClient.get(`/dashboard/pipeline-status`).then(r => { setPipeline(r.data); setPipelineError(null); }).catch(() => setPipelineError("Could not load pipeline status")).finally(() => setPipelineLoading(false));
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/dashboard/summary`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setSummary(data); setSummaryError(null); }).catch(() => setSummaryError("Could not load summary")).finally(() => setSummaryLoading(false));
+    apiClient.get(`/dashboard/summary`).then(r => { setSummary(r.data); setSummaryError(null); }).catch(() => setSummaryError("Could not load summary")).finally(() => setSummaryLoading(false));
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/dashboard/model-comparison`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setComparison(data); setComparisonError(null); }).catch(() => setComparisonError("Could not load model comparison")).finally(() => setComparisonLoading(false));
+    apiClient.get(`/dashboard/model-comparison`).then(r => { setComparison(r.data); setComparisonError(null); }).catch(() => setComparisonError("Could not load model comparison")).finally(() => setComparisonLoading(false));
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/predictions/history`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(data => { setPredictionsData(data.predictions || null); }).catch(() => { /* silently fail for predictions history */ });
+    apiClient.get(`/predictions/history`).then(r => { setPredictionsData(r.data.predictions || null); }).catch(() => { /* silently fail for predictions history */ });
   }, []);
   const handlePredictChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -185,9 +183,8 @@ const TrafficWeatherDashboard: React.FC = () => {
     setPredictError(null);
     setPredictResult(null);
     try {
-      const res = await fetch(`${API_BASE}/predict`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(predictForm) });
-      if (!res.ok) throw new Error("Prediction failed");
-      const data: PredictResponse = await res.json();
+      const res = await apiClient.post(`/predict`, predictForm);
+      const data: PredictResponse = res.data;
       setPredictResult(data);
     } catch (err: any) {
       setPredictError(err?.message || "Prediction failed");

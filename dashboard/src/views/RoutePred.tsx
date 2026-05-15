@@ -17,6 +17,7 @@ import {
   DepartureChoice
 } from '../types/AnalyticsAndTrends'
 import { useAnalyticsState } from '../redux/storeHooks';
+import apiClient from '../utils/apiClient';
 
 export const estimateFriction = (tempC: number, precipMm: number): number => {
   if (tempC <= -10) return 4.1;
@@ -65,16 +66,11 @@ function mapStationToWildlifeLocation(stationName: string): string | null {
 }
 
 const fetchForecastSeries = async (lat: number, lon: number): Promise<ForecastHour[]> => {
-  const res = await fetch(
-    `http://127.0.0.1:8000/api/analytics/forecast?lat=${lat}&lon=${lon}`
+  const res = await apiClient.get(
+    `/api/analytics/forecast?lat=${lat}&lon=${lon}`
   );
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch forecast');
-  }
-
-  const data: ForecastHour[] = await res.json();
-  return data;
+  return res.data;
 };
 
 const AnalyticsandTrends: React.FC = () => {
@@ -105,13 +101,8 @@ const AnalyticsandTrends: React.FC = () => {
         setLocationsLoading(true);
         setLocationsError(null);
 
-        const res = await fetch('http://127.0.0.1:8000/api/analytics/stations');
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch weather stations');
-        }
-
-        const data = await res.json();
+        const res = await apiClient.get('/api/analytics/stations');
+        const data = res.data;
 
         const locs: RouteLocation[] = (data.features || [])
           .map((feature: any) => {
@@ -276,15 +267,11 @@ const AnalyticsandTrends: React.FC = () => {
           return;
         }
 
-        const url = `http://127.0.0.1:8000/api/wildlife/route-details-by-location?from_location=${encodeURIComponent(fromWildlifeLocation)}&to_location=${encodeURIComponent(toWildlifeLocation)}`;
+        const url = `/api/wildlife/route-details-by-location?from_location=${encodeURIComponent(fromWildlifeLocation)}&to_location=${encodeURIComponent(toWildlifeLocation)}`;
         console.log('Wildlife API URL:', url);
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch wildlife details: ${res.status}`);
-        }
-
-        const data = await res.json();
+        const res = await apiClient.get(url);
+        const data = res.data;
         setWildlifeDetails(data);
       } catch (err: any) {
         console.error('Wildlife details load error', err);

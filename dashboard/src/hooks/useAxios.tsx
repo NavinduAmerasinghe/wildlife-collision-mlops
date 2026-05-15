@@ -1,11 +1,5 @@
-import axios from 'axios'
 import { useState, useEffect, useCallback } from 'react'
-
-const api = axios.create({
-  // baseURL: "http://localhost:8080/api/",
-    baseURL: "https://traverse-bountiful-conceded.ngrok-free.dev",
-  headers: { 'Content-Type': 'application/json' },
-})
+import apiClient from '../utils/apiClient'
 
 interface UseAxiosProps {
   url: string
@@ -29,7 +23,7 @@ export default function useAxios<T = any>({
     setLoading(true)
     setError(null)
     try {
-      const response = await api.request<T>({
+      const response = await apiClient.request<T>({
         url,
         method,
         data: body,

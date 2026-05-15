@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ModelMetricsChart } from '../components/ModelMetricsChart';
 import { DatasetUploadHistoryChart } from '../components/DatasetUploadHistoryChart';
+import apiClient from '../utils/apiClient';
 
 // --- Types ---
 type PipelineStatus = {
@@ -40,8 +41,6 @@ type Upload = {
   row_count: number;
   [key: string]: unknown;
 };
-
-const API_BASE = 'http://127.0.0.1:8000';
 
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined || isNaN(value)) return 'N/A';
@@ -88,10 +87,10 @@ const AnalyticsandTrends: React.FC = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`${API_BASE}/dashboard/pipeline-status`).then((r) => r.json()),
-      fetch(`${API_BASE}/dashboard/summary`).then((r) => r.json()),
-      fetch(`${API_BASE}/dashboard/model-comparison`).then((r) => r.json()),
-      fetch(`${API_BASE}/data/uploads/history`).then((r) => r.json()),
+      apiClient.get(`/dashboard/pipeline-status`).then((r) => r.data),
+      apiClient.get(`/dashboard/summary`).then((r) => r.data),
+      apiClient.get(`/dashboard/model-comparison`).then((r) => r.data),
+      apiClient.get(`/data/uploads/history`).then((r) => r.data),
     ])
       .then(([pipelineData, summaryData, comparisonData, uploadsResponse]) => {
         setPipeline(pipelineData ?? null);
@@ -266,9 +265,9 @@ const AnalyticsandTrends: React.FC = () => {
                         try {
                           const formData = new FormData();
                           formData.append('file', uploadFile);
-                          const res = await fetch(`${API_BASE}/data/upload/wildlife`, { method: 'POST', body: formData });
-                          const data = await res.json();
-                          if (!res.ok || data.status !== 'success') {
+                          const res = await apiClient.post(`/data/upload/wildlife`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                          const data = res.data;
+                          if (data.status !== 'success') {
                             setUploadError(data.detail || 'Upload failed.');
                             setUploadSuccess(null);
                           } else {
@@ -314,9 +313,9 @@ const AnalyticsandTrends: React.FC = () => {
                           setPipelineResult(null);
                           setPipelineLoading(true);
                           try {
-                            const res = await fetch(`${API_BASE}/pipeline/run`, { method: 'POST' });
-                            const data = await res.json();
-                            if (!res.ok || data.status !== 'success') {
+                            const res = await apiClient.post(`/pipeline/run`);
+                            const data = res.data;
+                            if (data.status !== 'success') {
                               setPipelineError(data.detail || 'Pipeline run failed.');
                               setPipelineResult(null);
                             } else {
@@ -326,9 +325,9 @@ const AnalyticsandTrends: React.FC = () => {
                               setLoading(true);
                               setError(null);
                               Promise.all([
-                                fetch(`${API_BASE}/dashboard/pipeline-status`).then((r) => r.json()),
-                                fetch(`${API_BASE}/dashboard/summary`).then((r) => r.json()),
-                                fetch(`${API_BASE}/dashboard/model-comparison`).then((r) => r.json()),
+                                apiClient.get(`/dashboard/pipeline-status`).then((r) => r.data),
+                                apiClient.get(`/dashboard/summary`).then((r) => r.data),
+                                apiClient.get(`/dashboard/model-comparison`).then((r) => r.data),
                               ])
                                 .then(([pipelineData, summaryData, comparisonData]) => {
                                   setPipeline(pipelineData ?? null);
