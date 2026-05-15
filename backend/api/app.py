@@ -26,7 +26,6 @@ app = FastAPI(title="Wildlife Collision Risk Prediction API")
 # This allows the frontend running on Vite (localhost:5173 or 127.0.0.1:5173) to call the API without CORS errors.
 app.add_middleware(
     CORSMiddleware,
-        CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
