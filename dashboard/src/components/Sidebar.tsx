@@ -74,7 +74,15 @@ export default function Sidebar() {
         {/* Divider and Monitoring section */}
         <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
         <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
-        <NavLink className={navLinkClass} to="/alerts" end>
+        <NavLink className={navLinkClass} to="/routePrediction" end>
+          <NavIconAlert /> RoutePrediction
+          {({ isActive }) => isActive && <PurpleDot />}
+        </NavLink>
+        <NavLink className={navLinkClass} to="/envMonitor" end>
+          <NavIconCamera /> Env.Monitor
+          {({ isActive }) => isActive && <PurpleDot />}
+        </NavLink>
+         <NavLink className={navLinkClass} to="/alerts" end>
           <NavIconAlert /> Alerts
           <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
           {({ isActive }) => isActive && <PurpleDot />}

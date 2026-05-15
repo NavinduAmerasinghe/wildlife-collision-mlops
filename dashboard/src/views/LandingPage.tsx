@@ -25,7 +25,7 @@ export default function LandingPage() {
         </div>
 
         {/* Title */}
-        <h1 className="title">WildLife Collision Risk Prediction System</h1>
+        <h1 className="title">WildLife <span className="nowrap">Collision Risk Prediction</span> System</h1>
 
         {/* Subtitle */}
         <p className="subtitle">Predict. Prevent. Protect</p>

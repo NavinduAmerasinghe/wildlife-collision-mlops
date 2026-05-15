@@ -12,6 +12,7 @@ from api.schemas import PredictionRequest, PredictionResponse
 from api.dashboard_routes import router as dashboard_router
 from api.data_routes import router as data_router
 from api.pipeline_routes import router as pipeline_router
+from api.analytics import router as analytics_router
 from db.mongo_client import get_prediction_collection, get_dataset_uploads_collection, get_pipeline_runs_collection, get_model_comparisons_collection
 import pandas as pd
 import numpy as np
@@ -38,6 +39,9 @@ app.include_router(dashboard_router)
 app.include_router(data_router)
 # Include pipeline orchestration routes
 app.include_router(pipeline_router)
+
+# Include analytics routes for weather stations and forecasts
+app.include_router(analytics_router)
 
 # Load the model once at startup
 try:
