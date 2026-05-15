@@ -1,11 +1,9 @@
 import axios from 'axios'
 import { useState, useEffect, useCallback } from 'react'
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL
-const apiBaseUrl = rawApiBaseUrl?.trim() ? rawApiBaseUrl.replace(/\/$/, '') : '/api'
-
 const api = axios.create({
-  baseURL: "https://traverse-bountiful-conceded.ngrok-free.dev/api",
+  // baseURL: "http://localhost:8080/api/",
+    baseURL: "https://traverse-bountiful-conceded.ngrok-free.dev",
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -21,7 +19,6 @@ export default function useAxios<T = any>({
   url,
   method = 'get',
   body,
-  dependencies = [],
   immediate = true,
 }: UseAxiosProps) {
   const [data, setData] = useState<T | null>(null)
@@ -49,7 +46,7 @@ export default function useAxios<T = any>({
     if (immediate) {
       fetchData()
     }
-  }, [immediate, fetchData, ...dependencies])
+  },[])
 
   return { data, loading, error, refetch: fetchData }
 }
