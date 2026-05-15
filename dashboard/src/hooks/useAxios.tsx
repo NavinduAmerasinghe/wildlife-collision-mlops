@@ -5,7 +5,7 @@ const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const apiBaseUrl = rawApiBaseUrl?.trim() ? rawApiBaseUrl.replace(/\/$/, '') : '/api'
 
 const api = axios.create({
-  baseURL: apiBaseUrl,
+  baseURL: "https://traverse-bountiful-conceded.ngrok-free.dev/api",
   headers: { 'Content-Type': 'application/json' },
 })
 
