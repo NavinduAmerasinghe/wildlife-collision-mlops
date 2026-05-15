@@ -39,6 +39,31 @@ export const estimateTrafficImpact = (tempC: number, precipMm: number): number =
   return Math.max(4.0, Math.min(5.5, base));
 };
 
+function mapStationToWildlifeLocation(stationName: string): string | null {
+  if (!stationName) return null;
+
+  const specialMap: Record<string, string> = {
+    'Åland_Eckerö': 'Åland_Eckerö',
+    'Åland_Åva_K': 'Åland_Åva_K',
+  };
+
+  if (specialMap[stationName]) return specialMap[stationName];
+
+  const normalized = stationName.replace(/_/g, ' ');
+  const parts = stationName.split('_');
+
+  let city = parts.length > 1 ? parts[1] : parts[0];
+
+  const cityNormalization: Record<string, string> = {
+    Hki: 'Helsinki',
+    Tre: 'Tampere',
+  };
+
+  city = cityNormalization[city] || city;
+
+  return city || normalized || null;
+}
+
 const fetchForecastSeries = async (lat: number, lon: number): Promise<ForecastHour[]> => {
   const res = await fetch(
     `http://127.0.0.1:8000/api/analytics/forecast?lat=${lat}&lon=${lon}`
@@ -66,6 +91,9 @@ const AnalyticsandTrends: React.FC = () => {
   const [trafficData, setTrafficData] = useAnalyticsState('trafficData')
   const [chartsLoading, setChartsLoading] = useState(false);
   const [chartsError, setChartsError] = useAnalyticsState('chartsError')
+  const [wildlifeLoading, setWildlifeLoading] = useState(false);
+  const [wildlifeError, setWildlifeError] = useState<string | null>(null);
+  const [wildlifeDetails, setWildlifeDetails] = useState<any | null>(null);
 
   const [departureChoice, setDepartureChoice] = useAnalyticsState('departureChoice')
 
@@ -112,15 +140,30 @@ const AnalyticsandTrends: React.FC = () => {
         locs.sort((a, b) => a.label.localeCompare(b.label));
         const trimmed = locs.slice(0, 80);
 
-        setRouteLocations(trimmed);
+        const devStations: RouteLocation[] = [
+          { id: 'vt3_Nokia_Kutala', label: 'vt3_Nokia_Kutala', lat: 0, lon: 0 },
+          { id: 'vt9_Kangasala', label: 'vt9_Kangasala', lat: 0, lon: 0 },
+          { id: 'vt3_Tampere_Lakalaiva', label: 'vt3_Tampere_Lakalaiva', lat: 0, lon: 0 },
+          { id: 'vt9_Orivesi', label: 'vt9_Orivesi', lat: 0, lon: 0 },
+        ];
 
-        if (trimmed.length > 0) {
-          setFromLocationId(trimmed[0].id);
+        const merged = [...trimmed];
+        devStations.forEach((station) => {
+          if (!merged.some((loc) => loc.id === station.id)) {
+            merged.unshift(station);
+          }
+        });
+
+        setRouteLocations(merged);
+
+        const preferredFrom = merged.find((loc) => loc.id === 'vt3_Nokia_Kutala') || merged[0] || null;
+        const preferredTo = merged.find((loc) => loc.id === 'vt9_Kangasala') || merged[1] || merged[0] || null;
+
+        if (preferredFrom) {
+          setFromLocationId(preferredFrom.id);
         }
-        if (trimmed.length > 1) {
-          setToLocationId(trimmed[1].id);
-        } else if (trimmed.length === 1) {
-          setToLocationId(trimmed[0].id);
+        if (preferredTo) {
+          setToLocationId(preferredTo.id);
         }
       } catch (err) {
         console.error('Error loading route locations:', err);
@@ -204,6 +247,74 @@ const AnalyticsandTrends: React.FC = () => {
     load();
   }, [fromLocationId, toLocationId, fromLocation, toLocation, locationEnabled]);
 
+  // Wildlife collision details: fetch when route or location settings change
+  useEffect(() => {
+    const loadWildlife = async () => {
+      setWildlifeLoading(true);
+      setWildlifeError(null);
+      setWildlifeDetails(null);
+
+      if (!locationEnabled || !fromLocation || !toLocation) {
+        setWildlifeLoading(false);
+        return;
+      }
+
+      try {
+        const fromStationName = fromLocation.id || fromLocation.label || '';
+        const toStationName = toLocation.id || toLocation.label || '';
+        const fromWildlifeLocation = mapStationToWildlifeLocation(fromStationName);
+        const toWildlifeLocation = mapStationToWildlifeLocation(toStationName);
+
+        console.log('Selected from station:', fromStationName);
+        console.log('Selected to station:', toStationName);
+        console.log('Mapped from wildlife location:', fromWildlifeLocation);
+        console.log('Mapped to wildlife location:', toWildlifeLocation);
+
+        if (!fromWildlifeLocation || !toWildlifeLocation) {
+          setWildlifeError('Could not map selected road station to wildlife dataset location.');
+          setWildlifeLoading(false);
+          return;
+        }
+
+        const url = `http://127.0.0.1:8000/api/wildlife/route-details-by-location?from_location=${encodeURIComponent(fromWildlifeLocation)}&to_location=${encodeURIComponent(toWildlifeLocation)}`;
+        console.log('Wildlife API URL:', url);
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch wildlife details: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setWildlifeDetails(data);
+      } catch (err: any) {
+        console.error('Wildlife details load error', err);
+        setWildlifeError(err?.message || 'Failed to load wildlife details');
+      } finally {
+        setWildlifeLoading(false);
+      }
+    };
+
+    loadWildlife();
+  }, [fromLocationId, toLocationId, fromLocation, toLocation, locationEnabled]);
+
+  const routeLocationOptions = useMemo(() => {
+    const options = [...routeLocations];
+    const devStations: RouteLocation[] = [
+      { id: 'vt3_Nokia_Kutala', label: 'vt3_Nokia_Kutala', lat: 0, lon: 0 },
+      { id: 'vt9_Kangasala', label: 'vt9_Kangasala', lat: 0, lon: 0 },
+      { id: 'vt3_Tampere_Lakalaiva', label: 'vt3_Tampere_Lakalaiva', lat: 0, lon: 0 },
+      { id: 'vt9_Orivesi', label: 'vt9_Orivesi', lat: 0, lon: 0 },
+    ];
+
+    devStations.forEach((station) => {
+      if (!options.some((loc) => loc.id === station.id)) {
+        options.unshift(station);
+      }
+    });
+
+    return options;
+  }, [routeLocations]);
+
   const prediction = useMemo(() => {
     if (!locationEnabled) {
       return {
@@ -239,8 +350,8 @@ const AnalyticsandTrends: React.FC = () => {
     const riskValue = 10 - (frictionScore + trafficScore);
 
     let riskLabel: 'Low' | 'Medium' | 'High';
-    let suggestion: string;
-    let detail: string;
+    let suggestion: string = '';
+    let detail: string = '';
 
     if (riskValue < 1.5) {
       riskLabel = 'Low';
@@ -263,11 +374,27 @@ const AnalyticsandTrends: React.FC = () => {
     return { riskLabel, suggestion, detail };
   }, [departureChoice, frictionData, trafficData, locationEnabled]);
 
+  const wildlifeSummary = useMemo(() => {
+    if (!wildlifeDetails) return { mainAnimal: '—', highestSeverity: '—' };
+    const animalMap = wildlifeDetails.animal_breakdown || {};
+    const severityMap = wildlifeDetails.severity_breakdown || {};
+
+    const mainAnimal = Object.entries(animalMap).length > 0
+      ? Object.entries(animalMap).sort((a: any, b: any) => (b[1] as number) - (a[1] as number))[0][0]
+      : '—';
+
+    const highestSeverity = Object.entries(severityMap).length > 0
+      ? Object.entries(severityMap).sort((a: any, b: any) => (b[1] as number) - (a[1] as number))[0][0]
+      : '—';
+
+    return { mainAnimal, highestSeverity };
+  }, [wildlifeDetails]);
+
   return (
     <div
       className={`min-h-screen w-full px-4 sm:px-6 lg:px-10 py-4 transition-colors duration-500 text-[15px] sm:text-base ${theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
-        : 'bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300'
+        ? 'bg-linear-to-br from-gray-900 via-gray-900 to-gray-800'
+        : 'bg-linear-to-br from-gray-100 via-gray-200 to-gray-300'
         }`}
     >
       <div className="w-full max-w-[1400px] mx-auto space-y-4">
@@ -315,8 +442,8 @@ const AnalyticsandTrends: React.FC = () => {
 
                   <div
                     className={`rounded-xl p-3 sm:p-4 ${theme === 'dark'
-                      ? 'bg-gradient-to-br from-blue-900/30 to-indigo-900/30'
-                      : 'bg-gradient-to-br from-blue-50 to-indigo-50'
+                      ? 'bg-linear-to-br from-blue-900/30 to-indigo-900/30'
+                      : 'bg-linear-to-br from-blue-50 to-indigo-50'
                       }`}
                   >
                     {chartsLoading ? (
@@ -429,8 +556,8 @@ const AnalyticsandTrends: React.FC = () => {
                   </p>
                   <div
                     className={`rounded-xl p-3 sm:p-4 ${theme === 'dark'
-                      ? 'bg-gradient-to-br from-purple-900/30 to-pink-900/30'
-                      : 'bg-gradient-to-br from-purple-50 to-pink-50'
+                      ? 'bg-linear-to-br from-purple-900/30 to-pink-900/30'
+                      : 'bg-linear-to-br from-purple-50 to-pink-50'
                       }`}
                   >
                     {chartsLoading ? (
@@ -570,8 +697,8 @@ const AnalyticsandTrends: React.FC = () => {
 
                 <div
                   className={`mb-5 rounded-2xl border px-4 py-4 sm:px-5 sm:py-4 flex flex-col gap-3 ${theme === 'dark'
-                    ? 'bg-gradient-to-r from-slate-900/70 via-slate-800/80 to-slate-900/70 border-slate-700'
-                    : 'bg-gradient-to-r from-white via-slate-100 to-white border-slate-200'
+                    ? 'bg-linear-to-r from-slate-900/70 via-slate-800/80 to-slate-900/70 border-slate-700'
+                    : 'bg-linear-to-r from-white via-slate-100 to-white border-slate-200'
                     }`}
                 >
                   <div className="flex-1">
@@ -731,19 +858,19 @@ const AnalyticsandTrends: React.FC = () => {
                     <select
                       value={fromLocationId}
                       onChange={(e) => setFromLocationId(e.target.value)}
-                      disabled={locationsLoading || routeLocations.length === 0}
+                      disabled={locationsLoading || routeLocationOptions.length === 0}
                       className={`w-full px-3 py-2 rounded-lg border text-sm ${theme === 'dark'
                         ? 'bg-gray-700 border-gray-600 text-gray-100'
                         : 'bg-white border-gray-300 text-gray-900'
                         }`}
                     >
                       {locationsLoading && <option>Loading locations…</option>}
-                      {!locationsLoading && routeLocations.length === 0 && (
+                      {!locationsLoading && routeLocationOptions.length === 0 && (
                         <option>No locations available</option>
                       )}
                       {!locationsLoading &&
-                        routeLocations.length > 0 &&
-                        routeLocations.map((loc) => (
+                        routeLocationOptions.length > 0 &&
+                        routeLocationOptions.map((loc) => (
                           <option key={loc.id} value={loc.id}>
                             {loc.label}
                           </option>
@@ -761,19 +888,19 @@ const AnalyticsandTrends: React.FC = () => {
                     <select
                       value={toLocationId}
                       onChange={(e) => setToLocationId(e.target.value)}
-                      disabled={locationsLoading || routeLocations.length === 0}
+                      disabled={locationsLoading || routeLocationOptions.length === 0}
                       className={`w-full px-3 py-2 rounded-lg border text-sm ${theme === 'dark'
                         ? 'bg-gray-700 border-gray-600 text-gray-100'
                         : 'bg-white border-gray-300 text-gray-900'
                         }`}
                     >
                       {locationsLoading && <option>Loading locations…</option>}
-                      {!locationsLoading && routeLocations.length === 0 && (
+                      {!locationsLoading && routeLocationOptions.length === 0 && (
                         <option>No locations available</option>
                       )}
                       {!locationsLoading &&
-                        routeLocations.length > 0 &&
-                        routeLocations.map((loc) => (
+                        routeLocationOptions.length > 0 &&
+                        routeLocationOptions.map((loc) => (
                           <option key={loc.id} value={loc.id}>
                             {loc.label}
                           </option>
@@ -818,6 +945,111 @@ const AnalyticsandTrends: React.FC = () => {
                   <span className="font-semibold">Location</span> is turned ON in
                   Settings.
                 </p>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Wildlife Collision Details section */}
+        <div className="mt-6">
+          <div
+            className={`rounded-2xl shadow-lg p-5 sm:p-6 hover:shadow-xl transition-all duration-300 h-full ${theme === 'dark'
+              ? 'bg-gray-800'
+              : 'bg-gray-100/80 backdrop-blur-sm'
+              }`}
+          >
+            <h3 className={`text-base sm:text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+              Wildlife Collision Details
+            </h3>
+            <p className={`text-xs sm:text-[13px] mb-3 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              Historical and weather-adjusted wildlife collision risk for the selected route.
+            </p>
+
+            {wildlifeError === 'Could not map selected road station to wildlife dataset location.' ? (
+              <div className="py-6 text-center text-sm text-red-500">
+                Could not map selected road station to wildlife dataset location.
+              </div>
+            ) : null}
+
+            {wildlifeLoading ? (
+              <div className={`py-6 text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Loading wildlife collision details…</div>
+            ) : wildlifeError && wildlifeError !== 'Could not map selected road station to wildlife dataset location.' ? (
+              <div className="py-6 text-center text-sm text-red-500">{wildlifeError}</div>
+            ) : !wildlifeDetails || (wildlifeDetails && wildlifeDetails.timeline && wildlifeDetails.timeline.length === 0) ? (
+              <div className={`py-6 text-center ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                No wildlife collision records found for the selected route.
+              </div>
+            ) : (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total incidents</div>
+                    <div className={`text-xl font-semibold ${theme === 'dark' ? 'text-slate-50' : 'text-slate-800'}`}>{wildlifeDetails.total_incidents}</div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Top risk hour</div>
+                    <div className={`text-xl font-semibold ${theme === 'dark' ? 'text-slate-50' : 'text-slate-800'}`}>{wildlifeDetails.top_risk_hours && wildlifeDetails.top_risk_hours.length > 0 ? wildlifeDetails.top_risk_hours[0] : '—'}</div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Main animal type</div>
+                    <div className={`text-xl font-semibold ${theme === 'dark' ? 'text-slate-50' : 'text-slate-800'}`}>{wildlifeSummary.mainAnimal}</div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Highest severity</div>
+                    <div className={`text-xl font-semibold ${theme === 'dark' ? 'text-slate-50' : 'text-slate-800'}`}>{wildlifeSummary.highestSeverity}</div>
+                  </div>
+                </div>
+
+                <div className="mb-4" style={{ height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={wildlifeDetails.timeline} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e6e6fa'} />
+                      <XAxis dataKey="hour" tick={{ fill: theme === 'dark' ? '#d1d5db' : '#4b5563' }} />
+                      <YAxis tick={{ fill: theme === 'dark' ? '#d1d5db' : '#4b5563' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: theme === 'dark' ? '#1f2937' : 'white',
+                          color: theme === 'dark' ? '#f3f4f6' : '#111827',
+                          border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`,
+                        }}
+                      />
+                      <Line type="monotone" dataKey="risk_score" name="Wildlife Risk Score" stroke="#ef4444" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Animal breakdown</div>
+                    <ul className={`mt-2 text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                      {wildlifeDetails.animal_breakdown && Object.keys(wildlifeDetails.animal_breakdown).length > 0 ? (
+                        Object.entries(wildlifeDetails.animal_breakdown).map(([k, v]: any) => (
+                          <li key={k} className="flex justify-between">
+                            <span className="capitalize">{k}</span>
+                            <span>{v}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-sm text-gray-400">No data</li>
+                      )}
+                    </ul>
+                  </div>
+
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/60' : 'bg-white'}`}>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Severity breakdown</div>
+                    <ul className={`mt-2 text-sm ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                      {wildlifeDetails.severity_breakdown && Object.keys(wildlifeDetails.severity_breakdown).length > 0 ? (
+                        Object.entries(wildlifeDetails.severity_breakdown).map(([k, v]: any) => (
+                          <li key={k} className="flex justify-between">
+                            <span className="capitalize">{k}</span>
+                            <span>{v}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-sm text-gray-400">No data</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -26,6 +26,13 @@ interface RouteLocation {
 
 type DepartureChoice = 'now' | 'plus1' | 'plus2';
 
+interface WildlifeRiskData {
+  hour: string;
+  incident_count: number;
+  high_severity_count: number;
+  risk_score: number;
+}
+
 export type {
   FrictionPoint,
   TrafficPoint,
