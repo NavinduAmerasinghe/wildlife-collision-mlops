@@ -1,22 +1,17 @@
 
 import { useState } from "react";
-import { NavLink, NavLinkProps } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import SettingsModal from "./SettingsModal";
 import logo from "../assets/logo.png";
+import { useSettings } from "../views/SettingsContext";
 
-const navLinkClass: NavLinkProps["className"] = ({ isActive }) =>
+const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
     "flex items-center gap-2 px-[12px] py-[10px] rounded-[8px] font-medium text-[13px] no-underline transition-colors border-0",
     isActive
       ? "bg-[rgba(124,124,255,0.12)] text-[#c5c5ff] font-medium"
       : "text-[#8888aa] hover:bg-[rgba(255,255,255,0.05)]",
   ].join(" ");
-
-function PurpleDot() {
-  return (
-    <span className="ml-auto w-[6px] h-[6px] rounded-full bg-[#7c7cff]" />
-  );
-}
 
 function NavIconAnalytics() {
   return (
@@ -51,6 +46,7 @@ function SunIcon() {
 
 export default function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { userRole } = useSettings();
   return (
     <aside className="w-[22%] min-w-[220px] max-w-[340px] h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none">
       {/* Header */}
@@ -62,35 +58,37 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
       {/* Nav section */}
-        <NavLink className={navLinkClass} to="/analytics" end>
-          <NavIconAnalytics /> Analytics & MLOps
-          {({ isActive }) => isActive && <PurpleDot />}
-        </NavLink>
-        <NavLink className={navLinkClass} to="/liveTraffic" end>
-          <NavIconTraffic /> Smart Road Weather & Traffic
-          {({ isActive }) => isActive && <PurpleDot />}
-        </NavLink>
+        {userRole === "admin" && (
+          <>
+            <NavLink className={getNavLinkClass} to="/analytics" end>
+              <NavIconAnalytics /> Analytics & MLOps
+            </NavLink>
+            <NavLink className={getNavLinkClass} to="/liveTraffic" end>
+              <NavIconTraffic /> Smart Road Weather & Traffic
+            </NavLink>
+          </>
+        )}
 
         {/* Divider and Monitoring section */}
         <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
         <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
-        <NavLink className={navLinkClass} to="/routePrediction" end>
+        <NavLink className={getNavLinkClass} to="/routePrediction" end>
           <NavIconAlert /> RoutePrediction
-          {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
-        <NavLink className={navLinkClass} to="/envMonitor" end>
+        <NavLink className={getNavLinkClass} to="/envMonitor" end>
           <NavIconCamera /> Env.Monitor
-          {({ isActive }) => isActive && <PurpleDot />}
         </NavLink>
-         <NavLink className={navLinkClass} to="/alerts" end>
-          <NavIconAlert /> Alerts
-          <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
-          {({ isActive }) => isActive && <PurpleDot />}
-        </NavLink>
-        <NavLink className={navLinkClass} to="/cameras" end>
-          <NavIconCamera /> Cameras
-          {({ isActive }) => isActive && <PurpleDot />}
-        </NavLink>
+        {userRole === "admin" && (
+          <>
+            <NavLink className={getNavLinkClass} to="/alerts" end>
+              <NavIconAlert /> Alerts
+              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
+            </NavLink>
+            <NavLink className={getNavLinkClass} to="/cameras" end>
+              <NavIconCamera /> Cameras
+            </NavLink>
+          </>
+        )}
         
       </nav>
         {/* Logo Watermark */}
@@ -100,21 +98,21 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="px-5 py-5 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-4 text-[18px]">
         <button
-          className={navLinkClass({ isActive: false })}
+          className={getNavLinkClass({ isActive: false })}
           type="button"
           onClick={() => setSettingsOpen(true)}
         >
           <NavIconSettings /> Settings
         </button>
         <div className="flex items-center gap-3 mt-2">
-          <div className="w-[38px] h-[38px] rounded-full bg-gradient-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
+          <div className="w-[38px] h-[38px] rounded-full bg-linear-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
             <span className="text-white font-bold text-[18px]">U</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[#c5c5ff] text-[18px] font-medium leading-tight">Uusimaa Region</span>
             <span className="text-[#44445a] text-[15px] leading-tight">Active monitoring</span>
           </div>
-          <span className="ml-auto w-[8px] h-[8px] rounded-full bg-green-500" />
+          <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
         </div>
 
 

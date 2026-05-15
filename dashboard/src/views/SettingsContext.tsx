@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState } from 'react';
 export type TemperatureUnit = 'celsius' | 'fahrenheit';
 export type ThemeMode = 'light' | 'dark';
 export type NotificationType = 'push' | 'email' | 'off';
+export type UserRole = 'user' | 'admin';
 
 interface SettingsContextValue {
   theme: ThemeMode;
@@ -17,6 +18,9 @@ interface SettingsContextValue {
 
   locationEnabled: boolean;
   setLocationEnabled: (v: boolean) => void;
+
+  userRole: UserRole;
+  setUserRole: (r: UserRole) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -26,6 +30,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('celsius');
   const [notificationType, setNotificationType] = useState<NotificationType>('push');
   const [locationEnabled, setLocationEnabled] = useState<boolean>(true);
+  const [userRole, setUserRole] = useState<UserRole>('admin');
 
   return (
     <SettingsContext.Provider
@@ -38,6 +43,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setNotificationType,
         locationEnabled,
         setLocationEnabled,
+        userRole,
+        setUserRole,
       }}
     >
       {children}

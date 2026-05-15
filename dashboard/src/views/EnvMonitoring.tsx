@@ -838,6 +838,12 @@ const TrafficWeatherDashboard: React.FC = () => {
     cameraPresets.length > 0 && filteredCameraPresets.length === 0;
 
   useEffect(() => {
+    if (detectedCondition && conditions !== detectedCondition) {
+      setConditions(detectedCondition);
+    }
+  }, [detectedCondition, conditions, setConditions]);
+
+  useEffect(() => {
     fetchWeatherData(searchLocation);
     fetchCameraStations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -977,8 +983,8 @@ const TrafficWeatherDashboard: React.FC = () => {
   return (
     <div
       className={`h-full w-full px-4 py-6 sm:px-6 lg:px-10  overflow-y-auto ${theme === 'dark'
-        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'
-        : 'bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300'
+        ? 'bg-linear-to-br from-slate-950 via-slate-900 to-slate-950'
+        : 'bg-linear-to-br from-slate-100 via-slate-200 to-slate-300'
         }`}
     >
       {toast && (
@@ -1254,16 +1260,21 @@ const TrafficWeatherDashboard: React.FC = () => {
                         {detectedCondition && (
                           <span
                             className={
-                              'inline-flex items-center justify-center px-3 py-1 rounded-full border text-base ' +
+                              'inline-flex items-center justify-center px-3 py-2 mt-4 rounded-full border text-base ' +
                               (detectedCondition === conditions
                                 ? 'border-emerald-400 text-emerald-300 bg-emerald-500/10'
                                 : 'border-amber-400 text-amber-300 bg-amber-500/10')
                             }
                           >
-                            Detected:&nbsp;
-                            <span className="font-semibold text-lg">
-                              {detectedCondition}
+                            Road condition:&nbsp;
+                             <span className="font-semibold text-slate-100 text-lg">
+                            {conditions}
+                          </span>
+                             {detectedCondition && (
+                            <span className="ml-2 text-xs text-slate-400">
+                              {detectedCondition === conditions ? '(auto-matched)' : `(detected: ${detectedCondition})`}
                             </span>
+                          )}
                           </span>
                         )}
                       </div>
@@ -1291,7 +1302,7 @@ const TrafficWeatherDashboard: React.FC = () => {
 
                 <div className="space-y-6">
                   <div className="border border-slate-700 rounded-2xl p-6 bg-slate-900/80">
-                    <label className="block text-lg font-semibold text-slate-200 mb-3 flex items-center gap-1">
+                    <label className="text-lg font-semibold text-slate-200 mb-3 flex items-center gap-1">
                       Live camera
                       <InfoTooltip text="Filter the camera list using the location search at the top and choose how the list is ordered here." />
                     </label>
@@ -1354,12 +1365,11 @@ const TrafficWeatherDashboard: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 gap-5">
                     <div className="border border-slate-700 rounded-2xl p-5 bg-slate-900/80">
-                      <label className="block text-lg font-semibold text-slate-200 mb-3 flex items-center justify-between mt-2">
+                      <label className="text-lg font-semibold text-slate-200 mb-3 flex items-center justify-between mt-2">
                         <span className="flex flex-col leading-tight">
-                          Road
-                          <span>type</span>
+                          Road type
                         </span>
 
                         <InfoTooltip text="Choose whether to show cameras on highways, local roads or city streets. Only existing cameras for that category are listed, which may temporarily hide the live image until you select a matching camera." />
@@ -1382,35 +1392,6 @@ const TrafficWeatherDashboard: React.FC = () => {
                         </option>
                         <option value="City Streets" className="text-xl">
                           City Streets
-                        </option>
-                      </select>
-                    </div>
-
-                    <div className="border border-slate-700 rounded-2xl p-5 bg-slate-900/80">
-                      <label className="block text-lg font-semibold text-slate-200 mb-3 flex items-center gap-1">
-                        Road Conditions
-                        <InfoTooltip text="Use this to focus on icy, wet or snowy warnings. The 'Detected' condition is derived from Digitraffic sensors and FMI model data near the selected camera." />
-                      </label>
-
-                      <select
-                        value={conditions}
-                        onChange={(e) =>
-                          setConditions(e.target.value as typeof conditions)
-                        }
-                        className="w-full px-5 py-3 rounded-xl bg-slate-950 border border-slate-700 
-                   text-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                      >
-                        <option value="Icy" className="text-xl">
-                          Icy
-                        </option>
-                        <option value="Clear" className="text-xl">
-                          Clear
-                        </option>
-                        <option value="Wet" className="text-xl">
-                          Wet
-                        </option>
-                        <option value="Snowy" className="text-xl">
-                          Snowy
                         </option>
                       </select>
                     </div>

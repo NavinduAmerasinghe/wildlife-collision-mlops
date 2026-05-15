@@ -60,6 +60,8 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
     setNotificationType,
     locationEnabled,
     setLocationEnabled,
+    userRole,
+    setUserRole,
   } = useSettings();
 
   if (!open) return null;
@@ -111,12 +113,50 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
         </div>
 
         <div className="space-y-4 sm:space-y-5">
+          {/* Role */}
+          <div
+            className={`rounded-xl p-4 border transition-all duration-300 ${
+              theme === "dark"
+                ? "bg-linear-to-br from-indigo-900/20 to-violet-900/20 border-indigo-800"
+                : "bg-linear-to-br from-indigo-50 to-violet-50 border-indigo-100"
+            }`}
+          >
+            <h3
+              className={`text-[12px] sm:text-sm font-semibold mb-1.5 ${
+                theme === "dark" ? "text-gray-200" : "text-gray-800"
+              }`}
+            >
+              Role
+            </h3>
+            <p
+              className={`text-[11px] mb-3 ${
+                theme === "dark" ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              Choose whether this dashboard should behave like a regular user or an admin.
+            </p>
+            <div className="flex items-center justify-between gap-4">
+              <RadioButton
+                checked={userRole === "user"}
+                onChange={() => setUserRole("user")}
+                label="User"
+                theme={theme}
+              />
+              <RadioButton
+                checked={userRole === "admin"}
+                onChange={() => setUserRole("admin")}
+                label="Admin"
+                theme={theme}
+              />
+            </div>
+          </div>
+
           {/* Temperature Unit */}
           <div
             className={`rounded-xl p-4 border transition-all duration-300 ${
               theme === "dark"
-                ? "bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border-blue-800"
-                : "bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-100"
+                ? "bg-linear-to-br from-blue-900/20 to-cyan-900/20 border-blue-800"
+                : "bg-linear-to-br from-blue-50 to-cyan-50 border-blue-100"
             }`}
           >
             <h3
@@ -163,8 +203,8 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
           <div
             className={`rounded-xl p-4 border transition-all duration-300 ${
               theme === "dark"
-                ? "bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-800"
-                : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-100"
+                ? "bg-linear-to-br from-green-900/20 to-emerald-900/20 border-green-800"
+                : "bg-linear-to-br from-green-50 to-emerald-50 border-green-100"
             }`}
           >
             <h3
@@ -212,8 +252,8 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
           <div
             className={`rounded-xl p-4 border transition-all duration-300 ${
               theme === "dark"
-                ? "bg-gradient-to-br from-amber-900/20 to-orange-900/20 border-amber-800"
-                : "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100"
+                ? "bg-linear-to-br from-amber-900/20 to-orange-900/20 border-amber-800"
+                : "bg-linear-to-br from-amber-50 to-orange-50 border-amber-100"
             }`}
           >
             <h3
@@ -250,8 +290,8 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
           <div
             className={`rounded-xl p-4 border transition-all duration-300 ${
               theme === "dark"
-                ? "bg-gradient-to-br from-rose-900/20 to-pink-900/20 border-rose-800"
-                : "bg-gradient-to-br from-rose-50 to-pink-50 border-rose-100"
+                ? "bg-linear-to-br from-rose-900/20 to-pink-900/20 border-rose-800"
+                : "bg-linear-to-br from-rose-50 to-pink-50 border-rose-100"
             }`}
           >
             <h3
