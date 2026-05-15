@@ -46,9 +46,10 @@ function SunIcon() {
 
 export default function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { userRole } = useSettings();
-  return (
-    <aside className="w-[22%] min-w-[220px] max-w-[340px] h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none">
+  const NavContents = (
+    <>
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
         <span className="text-[16px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">
@@ -57,7 +58,6 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
-      {/* Nav section */}
         {userRole === "admin" && (
           <>
             <NavLink className={getNavLinkClass} to="/analytics" end>
@@ -69,7 +69,6 @@ export default function Sidebar() {
           </>
         )}
 
-        {/* Divider and Monitoring section */}
         <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
         <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
         <NavLink className={getNavLinkClass} to="/routePrediction" end>
@@ -89,12 +88,13 @@ export default function Sidebar() {
             </NavLink>
           </>
         )}
-        
       </nav>
-        {/* Logo Watermark */}
-        <div className="mt-4 flex justify-center opacity-30 hover:opacity-50 transition-opacity">
-          <img src={logo} alt="System Logo" className="max-w-[120px] h-auto" />
-        </div>
+
+      {/* Logo Watermark */}
+      <div className="mt-4 flex justify-center opacity-30 hover:opacity-50 transition-opacity">
+        <img src={logo} alt="System Logo" className="max-w-[120px] h-auto" />
+      </div>
+
       {/* Footer */}
       <div className="px-5 py-5 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-4 text-[18px]">
         <button
@@ -114,10 +114,43 @@ export default function Sidebar() {
           </div>
           <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
         </div>
-
-
       </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-[#0f0f18] text-white shadow-lg"
+        aria-label="Open navigation"
+        onClick={() => setMobileOpen(true)}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-64 h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none shadow-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
+              <span className="text-[16px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">NAVIGATION</span>
+              <button onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="p-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {NavContents}
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-[22%] min-w-[220px] max-w-[340px] h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none">
+        {NavContents}
+      </aside>
+
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-    </aside>
+    </>
   );
 }

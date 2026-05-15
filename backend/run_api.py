@@ -1,12 +1,7 @@
-import os
+"""
+Entry point to run the FastAPI server for wildlife collision risk prediction.
+"""
 import uvicorn
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-
-    uvicorn.run(
-        "api.app:app",
-        host="0.0.0.0",
-        port=port,
-        reload=False
-    )
+    uvicorn.run("api.app:app", host="0.0.0.0", port=8000, reload=True)
