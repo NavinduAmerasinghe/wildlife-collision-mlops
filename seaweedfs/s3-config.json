@@ -1,0 +1,20 @@
+{
+  "identities": [
+    {
+      "name": "wildlife-app",
+      "credentials": [
+        {
+          "accessKey": "wildlife",
+          "secretKey": "wildlife-secret"
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ]
+    }
+  ]
+}

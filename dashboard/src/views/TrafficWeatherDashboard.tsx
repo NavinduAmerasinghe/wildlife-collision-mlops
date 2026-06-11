@@ -58,11 +58,22 @@ type PredictResponse = {
 
 type Prediction = {
   _id: string;
+  model_version?: string;
   response?: {
+    predicted_class?: number;
     risk_label: string;
+    probability?: number | null;
     [key: string]: unknown;
   };
   [key: string]: unknown;
+};
+
+type RiskScenario = {
+  key: string;
+  title: string;
+  description: string;
+  conditions: string[];
+  payload: PredictRequest;
 };
 
 const defaultPredict: PredictRequest = {
@@ -78,14 +89,209 @@ const defaultPredict: PredictRequest = {
   high_precipitation: 0,
 };
 
+const riskScenarios: RiskScenario[] = [
+  {
+    key: "autumn_moose_migration",
+    title: "Autumn Moose Migration — Rural Forest Road",
+    description: "Higher wildlife movement during autumn dusk and night conditions near forest roads.",
+    conditions: ["Autumn migration season", "Forest edge road", "Dusk / night travel"],
+    payload: {
+      temperature: 4,
+      precipitation: 2,
+      wind_speed: 4,
+      visibility: 2500,
+      speed_limit: 80,
+      hour: 20,
+      month: 10,
+      is_night: 1,
+      is_weekend: 0,
+      high_precipitation: 0,
+    },
+  },
+  {
+    key: "winter_low_visibility_highway",
+    title: "Winter Low Visibility Highway",
+    description: "Snowfall, darkness, and reduced visibility increase driving risk on faster roads.",
+    conditions: ["Snow or slush", "Darkness", "High-speed road"],
+    payload: {
+      temperature: -7,
+      precipitation: 7,
+      wind_speed: 8,
+      visibility: 1800,
+      speed_limit: 100,
+      hour: 18,
+      month: 1,
+      is_night: 1,
+      is_weekend: 0,
+      high_precipitation: 1,
+    },
+  },
+  {
+    key: "forest_dawn",
+    title: "Forest Road at Dawn",
+    description: "Early morning wildlife movement near forest roads can raise the chance of sudden animal crossings.",
+    conditions: ["Early morning", "Forest road", "Low dawn light"],
+    payload: {
+      temperature: 2,
+      precipitation: 0,
+      wind_speed: 3,
+      visibility: 4500,
+      speed_limit: 70,
+      hour: 5,
+      month: 5,
+      is_night: 1,
+      is_weekend: 0,
+      high_precipitation: 0,
+    },
+  },
+  {
+    key: "rainy_night_rural",
+    title: "Rainy Night Rural Road",
+    description: "Wet roads and darkness reduce reaction time on lower-traffic rural routes.",
+    conditions: ["Rainfall", "Night driving", "Rural road"],
+    payload: {
+      temperature: 6,
+      precipitation: 9,
+      wind_speed: 6,
+      visibility: 3200,
+      speed_limit: 80,
+      hour: 23,
+      month: 9,
+      is_night: 1,
+      is_weekend: 1,
+      high_precipitation: 1,
+    },
+  },
+];
+
+function normalizeProbability(probability: number | null | undefined): number | null {
+  if (probability === null || probability === undefined || Number.isNaN(probability)) return null;
+  return probability > 1 ? probability / 100 : probability;
+}
+
+function formatProbability(probability: number | null | undefined): string {
+  const normalized = normalizeProbability(probability);
+  if (normalized === null) return "—";
+  return `${Math.round(normalized * 100)}%`;
+}
+
+function getRiskLevel(probability: number | null | undefined) {
+  const normalized = normalizeProbability(probability);
+
+  if (normalized === null) {
+    return { level: "Unknown", tone: "text-slate-300", badge: "bg-slate-700/60 text-slate-200" };
+  }
+
+  if (normalized < 0.2) {
+    return { level: "Low", tone: "text-emerald-400", badge: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" };
+  }
+
+  if (normalized < 0.5) {
+    return { level: "Moderate", tone: "text-amber-400", badge: "bg-amber-500/15 text-amber-300 border border-amber-500/30" };
+  }
+
+  if (normalized < 0.75) {
+    return { level: "High", tone: "text-rose-400", badge: "bg-rose-500/15 text-rose-300 border border-rose-500/30" };
+  }
+
+  return { level: "Critical", tone: "text-red-300", badge: "bg-red-500/15 text-red-200 border border-red-500/30" };
+}
+
+function getRiskRecommendations(riskLevel: string): string[] {
+  const level = riskLevel.toLowerCase();
+
+  if (level === "low") {
+    return ["Continue normal driving", "Stay alert near forest edges"];
+  }
+
+  if (level === "moderate") {
+    return ["Reduce speed slightly", "Increase roadside awareness", "Watch for wildlife warning signs"];
+  }
+
+  if (level === "high") {
+    return ["Reduce speed significantly", "Avoid sudden braking", "Keep safe distance", "Be alert near wildlife crossings"];
+  }
+
+  if (level === "critical") {
+    return ["Strongly reduce speed", "Consider avoiding route if possible", "Use extra caution", "Monitor road edges continuously"];
+  }
+
+  return ["Review road conditions carefully", "Use driver judgment before proceeding"];
+}
+
+function getRiskFactors(inputPayload: PredictRequest): string[] {
+  const factors: string[] = [];
+
+  if (inputPayload.is_night === 1 || inputPayload.hour >= 19 || inputPayload.hour <= 6) {
+    factors.push("Nighttime driving increases wildlife collision risk.");
+  }
+
+  if (inputPayload.visibility <= 5000) {
+    factors.push("Low visibility reduces driver reaction time.");
+  }
+
+  if (inputPayload.high_precipitation === 1 || inputPayload.precipitation >= 5) {
+    factors.push("High precipitation may reduce road safety.");
+  }
+
+  if (inputPayload.speed_limit >= 80) {
+    factors.push("Higher speed limit increases collision severity.");
+  }
+
+  if ([1, 2, 9, 10, 11, 12].includes(inputPayload.month)) {
+    factors.push("Autumn and winter months may increase wildlife-related road risk.");
+  }
+
+  if (inputPayload.wind_speed >= 8) {
+    factors.push("Stronger wind can make driving conditions less stable.");
+  }
+
+  if (factors.length === 0) {
+    factors.push("Current conditions appear less elevated, but wildlife risk never disappears completely.");
+  }
+
+  return factors;
+}
+
+function getScenarioExplanation(selectedScenario: RiskScenario | null) {
+  if (!selectedScenario) return "";
+  return `${selectedScenario.description} Conditions: ${selectedScenario.conditions.join(" • ")}`;
+}
+
+function getAssessmentExplanation(riskLevel: string, factors: string[]): string {
+  const primaryFactor = factors[0];
+
+  if (riskLevel === "Low") {
+    return primaryFactor
+      ? `Current inputs point to a lower collision likelihood. ${primaryFactor}`
+      : "Current inputs point to a lower collision likelihood, but drivers should still remain alert near forest edges.";
+  }
+
+  if (riskLevel === "Moderate") {
+    return primaryFactor
+      ? `The assessment suggests a moderate collision risk. ${primaryFactor}`
+      : "The assessment suggests a moderate collision risk, so extra caution is warranted.";
+  }
+
+  if (riskLevel === "High") {
+    return primaryFactor
+      ? `The assessment indicates a high collision risk. ${primaryFactor}`
+      : "The assessment indicates a high collision risk and the route should be treated with caution.";
+  }
+
+  if (riskLevel === "Critical") {
+    return primaryFactor
+      ? `The assessment indicates critical collision risk. ${primaryFactor}`
+      : "The assessment indicates critical collision risk and the route deserves immediate caution.";
+  }
+
+  return "The current assessment is based on the deployed ML model and the simulation inputs.";
+}
+
 const TrafficWeatherDashboard: React.FC = () => {
   const [apiStatus, setApiStatus] = useState<boolean | null>(null);
   const [apiStatusLoading, setApiStatusLoading] = useState(true);
   const [apiStatusError, setApiStatusError] = useState<string | null>(null);
-
-  const [pipeline, setPipeline] = useState<PipelineStatus | null>(null);
-  const [pipelineLoading, setPipelineLoading] = useState(true);
-  const [pipelineError, setPipelineError] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<Summary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -103,62 +309,25 @@ const TrafficWeatherDashboard: React.FC = () => {
   const [scenarioExplanation, setScenarioExplanation] = useState<string>("");
   const [predictionsData, setPredictionsData] = useState<Prediction[] | null>(null);
 
-  const scenarios: { key: string; label: string; emoji: string; payload: PredictRequest; explanation: string }[] = [
-    {
-      key: "safe_daytime",
-      label: "Safe Daytime Driving",
-      emoji: "☀️",
-      payload: { temperature: 12, precipitation: 0, wind_speed: 2, visibility: 15000, speed_limit: 60, hour: 13, month: 6, is_night: 0, is_weekend: 0, high_precipitation: 0 },
-      explanation: "Clear daytime conditions usually reduce collision risk.",
-    },
-    {
-      key: "rainy_night",
-      label: "Rainy Night Road",
-      emoji: "🌧️",
-      payload: { temperature: 4, precipitation: 8, wind_speed: 6, visibility: 3000, speed_limit: 80, hour: 23, month: 10, is_night: 1, is_weekend: 0, high_precipitation: 1 },
-      explanation: "Nighttime and precipitation can increase uncertainty and wildlife collision risk.",
-    },
-    {
-      key: "weekend_high_speed",
-      label: "Weekend High-Speed Road",
-      emoji: "🚗",
-      payload: { temperature: 7, precipitation: 2, wind_speed: 4, visibility: 9000, speed_limit: 100, hour: 21, month: 5, is_night: 1, is_weekend: 1, high_precipitation: 0 },
-      explanation: "Higher speed and night travel can increase the severity and likelihood of collisions.",
-    },
-    {
-      key: "low_visibility_forest",
-      label: "Low Visibility Forest Road",
-      emoji: "🌲",
-      payload: { temperature: -2, precipitation: 4, wind_speed: 5, visibility: 1200, speed_limit: 80, hour: 6, month: 11, is_night: 1, is_weekend: 0, high_precipitation: 1 },
-      explanation: "Low visibility near forest-like conditions can make animal detection harder.",
-    },
-  ];
+  const loadPredictionHistory = async () => {
+    try {
+      const res = await apiClient.get(`/predictions/history`);
+      setPredictionsData(res.data.predictions || null);
+    } catch {
+      // keep history optional
+    }
+  };
 
-  const handleScenarioClick = async (scenario: typeof scenarios[0]) => {
+  const handleScenarioClick = (scenario: RiskScenario) => {
     setSelectedScenario(scenario.key);
     setPredictForm(scenario.payload);
-    setScenarioExplanation("");
-    setPredictLoading(true);
+    setScenarioExplanation(getScenarioExplanation(scenario));
     setPredictError(null);
     setPredictResult(null);
-    try {
-      const res = await apiClient.post(`/predict`, scenario.payload);
-      const data: PredictResponse = res.data;
-      setPredictResult(data);
-      setScenarioExplanation(scenario.explanation);
-    } catch (err: any) {
-      setPredictError(err?.message || "Prediction failed");
-    } finally {
-      setPredictLoading(false);
-    }
   };
 
   useEffect(() => {
     apiClient.get(`/health`).then(d => { setApiStatus(d.data.status === "ok"); setApiStatusError(null); }).catch(() => { setApiStatus(false); setApiStatusError("Could not connect to API"); }).finally(() => setApiStatusLoading(false));
-  }, []);
-
-  useEffect(() => {
-    apiClient.get(`/dashboard/pipeline-status`).then(r => { setPipeline(r.data); setPipelineError(null); }).catch(() => setPipelineError("Could not load pipeline status")).finally(() => setPipelineLoading(false));
   }, []);
 
   useEffect(() => {
@@ -170,7 +339,7 @@ const TrafficWeatherDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    apiClient.get(`/predictions/history`).then(r => { setPredictionsData(r.data.predictions || null); }).catch(() => { /* silently fail for predictions history */ });
+    loadPredictionHistory();
   }, []);
   const handlePredictChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -186,6 +355,7 @@ const TrafficWeatherDashboard: React.FC = () => {
       const res = await apiClient.post(`/predict`, predictForm);
       const data: PredictResponse = res.data;
       setPredictResult(data);
+      await loadPredictionHistory();
     } catch (err: any) {
       setPredictError(err?.message || "Prediction failed");
     } finally {
@@ -195,15 +365,6 @@ const TrafficWeatherDashboard: React.FC = () => {
 
   const formatPercent = (value: number | null | undefined) =>
     typeof value === "number" ? `${Math.round(value * 100)}%` : "—";
-
-  const pipelineItems = [
-    { label: "Bronze Layer", key: "bronze_available" as keyof PipelineStatus, icon: <Layers className="w-5 h-5" /> },
-    { label: "Silver Layer", key: "silver_available" as keyof PipelineStatus, icon: <Layers className="w-5 h-5" /> },
-    { label: "Gold Layer", key: "gold_available" as keyof PipelineStatus, icon: <Layers className="w-5 h-5" /> },
-    { label: "Model", key: "model_available" as keyof PipelineStatus, icon: <Brain className="w-5 h-5" /> },
-    { label: "Comparison", key: "comparison_available" as keyof PipelineStatus, icon: <GitCompare className="w-5 h-5" /> },
-    { label: "API", key: "api_status" as keyof PipelineStatus, icon: <Zap className="w-5 h-5" /> },
-  ];
 
   const summaryItems = summary ? [
     { label: "Latest Gold Batch ID", value: summary.latest_gold_batch_id, icon: <Database className="w-4 h-4" /> },
@@ -234,14 +395,22 @@ const TrafficWeatherDashboard: React.FC = () => {
     high_precipitation: "High Precipitation (0/1)",
   };
 
+  const latestPrediction = predictionsData && predictionsData.length > 0 ? predictionsData[0] : null;
+  const latestModelVersion = latestPrediction?.model_version ?? "Not available";
+  const selectedRiskScenario = riskScenarios.find((scenario) => scenario.key === selectedScenario) ?? null;
+  const assessedRisk = getRiskLevel(predictResult?.probability);
+  const riskRecommendations = getRiskRecommendations(assessedRisk.level);
+  const riskFactors = getRiskFactors(predictForm);
+  const riskAssessmentExplanation = predictResult ? getAssessmentExplanation(assessedRisk.level, riskFactors) : "";
+
   return (
     <div className="min-h-screen w-full bg-[#0a0f1a] text-slate-100" style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       {/* Top header bar */}
       <div className="border-b border-slate-800/60 bg-[#0d1525]/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="w-full max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-10 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              🦌 Wildlife Collision Risk Dashboard
+             Wildlife Collision Risk Dashboard
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">End-to-end MLOps · Finnish wildlife collision risk prediction</p>
           </div>
@@ -258,35 +427,7 @@ const TrafficWeatherDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-10 py-8 space-y-10 flex-1 overflow-y-auto">
-
-        {/* MLOps Pipeline Status */}
-        <section>
-          <SectionHeader title="MLOps Pipeline Status" />
-          {pipelineLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : pipelineError ? (
-            <ErrorBox message={pipelineError} />
-          ) : pipeline ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {pipelineItems.map((item) => {
-                const ok = pipeline[item.key] as boolean;
-                return (
-                  <div key={item.label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 flex flex-col items-center justify-center gap-2 min-h-[100px] text-center">
-                    <div className={`${ok ? "text-emerald-400" : "text-slate-600"}`}>{item.icon}</div>
-                    <span className="text-xs font-semibold text-slate-300 leading-tight">{item.label}</span>
-                    <span className={`flex items-center gap-1.5 text-xs font-medium ${ok ? "text-emerald-400" : "text-rose-400"}`}>
-                      {ok ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                      {ok ? "Available" : "Missing"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-        </section>
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-8 flex-1 overflow-y-auto">
 
         {/* Dataset Summary */}
         {/* <section>
@@ -357,13 +498,12 @@ const TrafficWeatherDashboard: React.FC = () => {
           ) : null}
         </section> */}
 
-        {/* Real-World Risk Scenario Simulator */}
+        {/* Environmental Risk Analysis Scenarios */}
         <section>
-          <SectionHeader title="Real-World Risk Scenario Simulator" subtitle="Click a scenario to simulate and predict" />
+          <SectionHeader title="Environmental Risk Analysis Scenarios" subtitle="Choose a realistic Finnish road setting to preload the risk assessment inputs" />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {scenarios.map((scenario) => {
+            {riskScenarios.map((scenario) => {
               const isSelected = selectedScenario === scenario.key;
-              const isLoading = predictLoading && isSelected;
               return (
                 <button
                   key={scenario.key}
@@ -373,16 +513,26 @@ const TrafficWeatherDashboard: React.FC = () => {
                   className={[
                     "rounded-xl border p-5 text-left transition-all duration-200 flex flex-col gap-3",
                     isSelected
-                      ? "border-emerald-500/70 bg-emerald-950/30 ring-1 ring-emerald-500/40"
+                      ? "border-emerald-500/70 bg-emerald-950/25 ring-1 ring-emerald-500/40"
                       : "border-slate-800 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-800/80",
-                    isLoading ? "opacity-60 cursor-wait" : "cursor-pointer",
+                    predictLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
                   ].join(" ")}
+                  aria-pressed={isSelected}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl">{scenario.emoji}</span>
-                    {isLoading && <Loader className="w-4 h-4 animate-spin text-emerald-400" />}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-sm text-slate-100 leading-snug">{scenario.title}</div>
+                      <div className="mt-1 text-xs text-slate-400 leading-relaxed">{scenario.description}</div>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${isSelected ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+                      {isSelected ? 'Loaded' : 'Load'}
+                    </span>
                   </div>
-                  <div className="font-semibold text-sm text-slate-100">{scenario.label}</div>
+                  <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
+                    {scenario.conditions.map((condition) => (
+                      <span key={condition} className="rounded-full border border-slate-700 bg-slate-800/70 px-2.5 py-1">{condition}</span>
+                    ))}
+                  </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-400">
                     <span>🌡 {scenario.payload.temperature}°C</span>
                     <span>🌧 {scenario.payload.precipitation}mm</span>
@@ -393,26 +543,30 @@ const TrafficWeatherDashboard: React.FC = () => {
                     <span>📅 Month {scenario.payload.month}</span>
                     <span>{scenario.payload.is_night ? "🌙 Night" : "☀️ Day"}</span>
                   </div>
-                  <div className="text-xs text-slate-500 border-t border-slate-800 pt-2">Click to simulate</div>
+                  <div className="text-xs text-slate-500 border-t border-slate-800 pt-2">Loads values into Advanced Simulation Inputs</div>
                 </button>
               );
             })}
           </div>
           {scenarioExplanation && (
-            <div className="mt-4 px-4 py-3 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-300 text-sm text-center">
-              {scenarioExplanation}
+            <div className="mt-4 px-4 py-3 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-200 text-sm">
+              <span className="font-semibold text-emerald-300">Why this scenario matters:</span> {scenarioExplanation}
             </div>
           )}
         </section>
 
-        {/* Wildlife Risk Prediction Form */}
+        {/* Wildlife Collision Risk Assessment */}
         <section>
-          <SectionHeader title="Wildlife Risk Prediction" subtitle="Manually configure parameters and run prediction" />
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <SectionHeader title="Wildlife Collision Risk Assessment" subtitle="Advanced simulation inputs for research, testing, and operational decision support" />
+          <div className="grid grid-cols-1 2xl:grid-cols-[1.05fr_0.95fr_0.9fr] gap-5">
             {/* Left: Form */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span>Latest deployed model version: <span className="font-semibold text-slate-200">{latestModelVersion}</span></span>
+                {selectedRiskScenario && <span>Scenario loaded: <span className="font-semibold text-slate-200">{selectedRiskScenario.title}</span></span>}
+              </div>
               <form onSubmit={handlePredictSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-5">
                   {Object.entries(defaultPredict).map(([key]) => (
                     <div key={key} className="flex flex-col gap-1.5">
                       <label htmlFor={key} className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -436,7 +590,7 @@ const TrafficWeatherDashboard: React.FC = () => {
                     disabled={predictLoading}
                     className="px-8 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {predictLoading ? <><Loader className="w-4 h-4 animate-spin" /> Predicting…</> : "Run Prediction"}
+                    {predictLoading ? <><Loader className="w-4 h-4 animate-spin" /> Assessing…</> : "Run Risk Assessment"}
                   </button>
                 </div>
               </form>
@@ -449,41 +603,72 @@ const TrafficWeatherDashboard: React.FC = () => {
             </div>
 
             {/* Right: Result / Recommendation card */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-              <div className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Prediction Result</div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Risk Assessment Result</div>
+                <div className="text-xs text-slate-500">Model version: <span className="font-semibold text-slate-300">{latestModelVersion}</span></div>
+              </div>
               {predictResult ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
-                    <div className="text-xs text-slate-500 mb-1">Risk Label</div>
-                    <div className={`text-xl font-bold ${getRiskColor(predictResult.risk_label)}`}>{predictResult.risk_label}</div>
-                  </div>
-                  <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
-                    <div className="text-xs text-slate-500 mb-1">Predicted Class</div>
-                    <div className="text-xl font-bold text-slate-100">{predictResult.predicted_class}</div>
-                  </div>
-                  <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
-                    <div className="text-xs text-slate-500 mb-1">Probability</div>
-                    <div className="text-xl font-bold text-slate-100">
-                      {predictResult.probability !== null ? formatPercent(predictResult.probability) : "N/A"}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
+                      <div className="text-xs text-slate-500 mb-1">Risk Level</div>
+                      <div className={`text-xl font-bold ${assessedRisk.tone}`}>{assessedRisk.level}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
+                      <div className="text-xs text-slate-500 mb-1">Probability</div>
+                      <div className="text-xl font-bold text-slate-100">{formatProbability(predictResult.probability)}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
+                      <div className="text-xs text-slate-500 mb-1">Model Output</div>
+                      <div className={`text-lg font-bold ${getRiskColor(predictResult.risk_label)}`}>{predictResult.risk_label}</div>
+                      <div className="text-xs text-slate-400 mt-1">Predicted class {predictResult.predicted_class}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-800/60 border border-slate-700 p-4 text-center">
+                      <div className="text-xs text-slate-500 mb-1">Model Version</div>
+                      <div className="text-base font-bold text-slate-100 break-all">{latestModelVersion}</div>
                     </div>
                   </div>
+
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Plain-language explanation</div>
+                    <p className="text-sm text-slate-200 leading-relaxed">{riskAssessmentExplanation}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Recommended driver actions</div>
+                      <ul className="space-y-1 text-sm text-slate-200 list-disc ml-5">
+                        {riskRecommendations.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Main risk factors</div>
+                      <ul className="space-y-1 text-sm text-slate-200 list-disc ml-5">
+                        {riskFactors.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
                 </div>
               ) : (
-                <div className="text-sm text-slate-500">Run a prediction to see results and recommendations here.</div>
+                <div className="text-sm text-slate-500">Load a scenario or enter advanced inputs, then run a risk assessment to see the decision-support output here.</div>
               )}
             </div>
+            {predictionsData && predictionsData.length > 0 && (
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+                <SectionHeader title="Risk Assessment History Chart" subtitle="Distribution of recent assessments by risk level" />
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 h-[520px]">
+                  <PredictionHistoryChart predictions={predictionsData} />
+                </div>
+              </div>
+            )}
           </div>
         </section>
-
-        {/* Prediction History Chart */}
-        {predictionsData && predictionsData.length > 0 && (
-          <section>
-            <SectionHeader title="Prediction History Chart" subtitle="Distribution of recent predictions by risk level" />
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-              <PredictionHistoryChart predictions={predictionsData} />
-            </div>
-          </section>
-        )}
 
       </div>
     </div>

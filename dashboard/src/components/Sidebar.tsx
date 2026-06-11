@@ -7,10 +7,10 @@ import { useSettings } from "../views/SettingsContext";
 
 const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
-    "flex items-center gap-2 px-[12px] py-[10px] rounded-[8px] font-medium text-[13px] no-underline transition-colors border-0",
+    "group flex items-center gap-3 px-3 py-3 rounded-2xl font-medium text-[13px] no-underline transition-all duration-200 border border-transparent",
     isActive
-      ? "bg-[rgba(124,124,255,0.12)] text-[#c5c5ff] font-medium"
-      : "text-[#8888aa] hover:bg-[rgba(255,255,255,0.05)]",
+      ? "bg-white/10 text-[#f3f4ff] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.18)] translate-x-0.5"
+      : "text-slate-300/80 hover:bg-white/5 hover:text-white hover:border-white/10",
   ].join(" ");
 
 function NavIconAnalytics() {
@@ -23,26 +23,13 @@ function NavIconTraffic() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c7cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M7 17V7a5 5 0 0 1 10 0v10"/><rect x="5" y="17" width="14" height="4" rx="2"/></svg>
   );
 }
-function NavIconAlert() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff5a5a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M12 9v4"/><circle cx="12" cy="17" r="1"/><path d="M5.07 19H18.93a2 2 0 0 0 1.73-3l-6.93-12a2 2 0 0 0-3.46 0l-6.93 12A2 2 0 0 0 5.07 19z"/></svg>
-  );
-}
-function NavIconCamera() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c7cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-  );
-}
 function NavIconSettings() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8888aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   );
 }
-function SunIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c7cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-  );
-}
+
+const systemName = "Wildlife Pulse";
 
 export default function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -51,52 +38,47 @@ export default function Sidebar() {
   const NavContents = (
     <>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-        <span className="text-[16px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">
-          NAVIGATION <SunIcon />
-        </span>
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10 bg-white/5 backdrop-blur-sm">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/70 shadow-lg shadow-indigo-900/20 overflow-hidden">
+          <img src={logo} alt={systemName} className="h-full w-full object-contain p-1.5" />
+        </div>
+        <div className="leading-tight">
+          <div className="text-[14px] font-semibold text-slate-100 tracking-wide">{systemName}</div>
+          <div className="text-[11px] tracking-[0.28em] text-slate-400 uppercase">Control Center</div>
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5 text-[20px]">
+      <nav className="flex-1 overflow-y-auto px-4 py-5 text-[20px]">
         {userRole === "admin" && (
           <>
             <NavLink className={getNavLinkClass} to="/analytics" end>
-              <NavIconAnalytics /> Analytics & MLOps
+              <NavIconAnalytics /> Analytics Overview
             </NavLink>
             <NavLink className={getNavLinkClass} to="/liveTraffic" end>
-              <NavIconTraffic /> Smart Road Weather & Traffic
+              <NavIconTraffic /> Traffic & Weather
             </NavLink>
           </>
         )}
 
-        <div className="my-3 border-t border-[rgba(255,255,255,0.06)]" />
-        <div className="px-2 pb-2 text-[15px] font-semibold text-[#44445a] tracking-widest">MONITORING</div>
+        <div className="my-4 border-t border-white/10" />
+        <div className="px-2 pb-3 text-[11px] font-semibold text-slate-400 tracking-[0.28em] uppercase">Live Monitoring</div>
         <NavLink className={getNavLinkClass} to="/routePrediction" end>
-          <NavIconAlert /> RoutePrediction
+          <NavIconTraffic /> Route Risk Forecasts
         </NavLink>
         <NavLink className={getNavLinkClass} to="/envMonitor" end>
-          <NavIconCamera /> Env.Monitor
+          <NavIconTraffic /> Environment Monitor
         </NavLink>
-        {userRole === "admin" && (
-          <>
-            <NavLink className={getNavLinkClass} to="/alerts" end>
-              <NavIconAlert /> Alerts
-              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[#ff5a5a] text-white">2</span>
-            </NavLink>
-            <NavLink className={getNavLinkClass} to="/cameras" end>
-              <NavIconCamera /> Cameras
-            </NavLink>
-          </>
-        )}
       </nav>
 
       {/* Logo Watermark */}
-      <div className="mt-4 flex justify-center opacity-30 hover:opacity-50 transition-opacity">
-        <img src={logo} alt="System Logo" className="max-w-[120px] h-auto" />
+        <div className="mt-4 flex justify-center px-4 opacity-40 hover:opacity-70 transition-opacity duration-200">
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm">
+            <img src={logo} alt="System Logo" className="max-w-[120px] h-auto" />
+          </div>
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-5 border-t border-[rgba(255,255,255,0.06)] flex flex-col gap-4 text-[18px]">
+        <div className="px-5 py-5 border-t border-white/10 flex flex-col gap-4 text-[18px] bg-white/5 backdrop-blur-sm">
         <button
           className={getNavLinkClass({ isActive: false })}
           type="button"
@@ -104,13 +86,13 @@ export default function Sidebar() {
         >
           <NavIconSettings /> Settings
         </button>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="w-[38px] h-[38px] rounded-full bg-linear-to-tr from-[#7c7cff] to-[#c5c5ff] flex items-center justify-center">
+          <div className="flex items-center gap-3 mt-2 rounded-2xl border border-white/10 bg-black/10 px-3 py-3">
+            <div className="w-[38px] h-[38px] rounded-full bg-linear-to-tr from-indigo-500 via-sky-400 to-cyan-300 flex items-center justify-center shadow-md shadow-indigo-950/20">
             <span className="text-white font-bold text-[18px]">U</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[#c5c5ff] text-[18px] font-medium leading-tight">Uusimaa Region</span>
-            <span className="text-[#44445a] text-[15px] leading-tight">Active monitoring</span>
+              <span className="text-slate-100 text-[16px] font-medium leading-tight">Uusimaa Region</span>
+              <span className="text-slate-400 text-[13px] leading-tight">Active monitoring</span>
           </div>
           <span className="ml-auto w-2 h-2 rounded-full bg-green-500" />
         </div>
@@ -122,7 +104,7 @@ export default function Sidebar() {
     <>
       {/* Mobile hamburger button */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-[#0f0f18] text-white shadow-lg"
+        className="md:hidden fixed top-4 left-4 z-50 p-3 rounded-2xl bg-slate-950/85 text-white shadow-[0_12px_30px_rgba(0,0,0,0.35)] border border-white/10 backdrop-blur-md"
         aria-label="Open navigation"
         onClick={() => setMobileOpen(true)}
       >
@@ -132,10 +114,18 @@ export default function Sidebar() {
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 flex">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-              <span className="text-[16px] tracking-widest text-[#7c7cff] font-semibold flex items-center gap-2">NAVIGATION</span>
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-72 h-full bg-slate-950/95 flex flex-col text-white text-[18px] select-none shadow-[0_20px_60px_rgba(0,0,0,0.45)] border-r border-white/10">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/70 overflow-hidden">
+                    <img src={logo} alt={systemName} className="h-full w-full object-contain p-1.5" />
+                  </div>
+                  <div className="leading-tight">
+                    <div className="text-[13px] font-semibold text-slate-100 tracking-wide">{systemName}</div>
+                    <div className="text-[10px] tracking-[0.28em] text-slate-400 uppercase">Control Center</div>
+                  </div>
+                </div>
               <button onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="p-1">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
@@ -146,8 +136,8 @@ export default function Sidebar() {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-[22%] min-w-[220px] max-w-[340px] h-full bg-[#12121f] flex flex-col text-white text-[18px] select-none">
-        {NavContents}
+      <aside className="hidden md:block w-[22%] min-w-[230px] max-w-[340px] h-full text-white text-[18px] select-none bg-slate-950/90 border-r border-white/10 shadow-[12px_0_40px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+        <div className="flex h-full flex-col">{NavContents}</div>
       </aside>
 
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
