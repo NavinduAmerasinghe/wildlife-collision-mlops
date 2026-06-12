@@ -77,8 +77,10 @@ services:
       - S3_BUCKET=wildlife-lake
       - BRONZE_PREFIX=bronze
       - SILVER_PREFIX=silver
+      - GOLD_PREFIX=gold
       - BRONZE_WRITE_LOCAL_MIRROR=true
       - SILVER_WRITE_LOCAL_MIRROR=true
+      - GOLD_WRITE_LOCAL_MIRROR=true
       - BRONZE_RUN_DVC=false
       - HADOOP_AWS_VERSION=3.3.4
       - AWS_JAVA_SDK_BUNDLE_VERSION=1.12.262
@@ -123,8 +125,10 @@ services:
       - S3_BUCKET=wildlife-lake
       - BRONZE_PREFIX=bronze
       - SILVER_PREFIX=silver
+      - GOLD_PREFIX=gold
       - BRONZE_WRITE_LOCAL_MIRROR=true
       - SILVER_WRITE_LOCAL_MIRROR=true
+      - GOLD_WRITE_LOCAL_MIRROR=true
       - BRONZE_RUN_DVC=false
       - HADOOP_AWS_VERSION=3.3.4
       - AWS_JAVA_SDK_BUNDLE_VERSION=1.12.262
