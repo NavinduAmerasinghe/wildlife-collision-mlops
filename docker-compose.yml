@@ -14,7 +14,7 @@ services:
   seaweedfs-volume:
     image: chrislusf/seaweedfs:3.84
     container_name: wildlife-mlops-seaweedfs-volume
-    command: 'volume -mserver="seaweedfs-master:9333" -ip=seaweedfs-volume -dir=/data -max=5'
+    command: 'volume -mserver="seaweedfs-master:9333" -ip=seaweedfs-volume -dir=/data -max=20'
     ports:
       - "8080:8080"
       - "18080:18080"
@@ -76,7 +76,9 @@ services:
       - S3_SECRET_KEY=wildlife-secret
       - S3_BUCKET=wildlife-lake
       - BRONZE_PREFIX=bronze
+      - SILVER_PREFIX=silver
       - BRONZE_WRITE_LOCAL_MIRROR=true
+      - SILVER_WRITE_LOCAL_MIRROR=true
       - BRONZE_RUN_DVC=false
       - HADOOP_AWS_VERSION=3.3.4
       - AWS_JAVA_SDK_BUNDLE_VERSION=1.12.262
@@ -120,7 +122,9 @@ services:
       - S3_SECRET_KEY=wildlife-secret
       - S3_BUCKET=wildlife-lake
       - BRONZE_PREFIX=bronze
+      - SILVER_PREFIX=silver
       - BRONZE_WRITE_LOCAL_MIRROR=true
+      - SILVER_WRITE_LOCAL_MIRROR=true
       - BRONZE_RUN_DVC=false
       - HADOOP_AWS_VERSION=3.3.4
       - AWS_JAVA_SDK_BUNDLE_VERSION=1.12.262

@@ -20,6 +20,12 @@ def get_bronze_table_path(source_name: str) -> str:
     return f"s3a://{bucket}/{prefix}/{source_name}"
 
 
+def get_silver_table_path(source_name: str) -> str:
+    bucket = _get_env("S3_BUCKET", "wildlife-lake")
+    prefix = _get_env("SILVER_PREFIX", "silver").strip("/")
+    return f"s3a://{bucket}/{prefix}/{source_name}"
+
+
 def create_spark_session(app_name: str = "wildlife-collision-mlops") -> SparkSession:
     endpoint = _get_env("S3_ENDPOINT", "http://seaweedfs-s3:8333")
     access_key = _get_env("S3_ACCESS_KEY", "wildlife")
