@@ -1,20 +1,21 @@
 """
-Trains a baseline logistic regression model for wildlife collision risk prediction.
+Trains an XGBoost model for wildlife collision risk prediction.
 Logs model, metrics, params, and artifacts to MLflow.
 """
 
 from datetime import datetime, timezone
 from pathlib import Path
 import pickle
+import json
 
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
 
 from model.model_utils import GOLD_DIR, find_latest_gold_csv, load_latest_gold_batch
 
@@ -110,10 +111,22 @@ def train_model(batch_id):
             random_state=42,
         )
 
-        # Create a pipeline with imputer and logistic regression
+        # Create a pipeline with imputer and XGBoost classifier
         model_pipeline = Pipeline([
             ("imputer", SimpleImputer(strategy="median")),
-            ("logistic_regression", LogisticRegression(max_iter=200))
+            (
+                "xgboost",
+                XGBClassifier(
+                    n_estimators=200,
+                    max_depth=6,
+                    learning_rate=0.05,
+                    subsample=0.9,
+                    colsample_bytree=0.9,
+                    objective="binary:logistic",
+                    eval_metric="logloss",
+                    random_state=42,
+                ),
+            ),
         ])
 
         # Fit the pipeline on training data (imputer is fitted on X_train)
@@ -128,26 +141,40 @@ def train_model(batch_id):
             "recall": recall_score(y_test, y_pred, zero_division=0),
             "f1_score": f1_score(y_test, y_pred, zero_division=0),
         }
+        xgb_model = model_pipeline.named_steps["xgboost"]
+        feature_importances = {
+            feature: float(importance)
+            for feature, importance in zip(features_used, xgb_model.feature_importances_)
+        }
 
         model_folder = MODELS_DIR
         model_folder.mkdir(parents=True, exist_ok=True)
 
         model_path = model_folder / f"wildlife_risk_model_{batch_id}.pkl"
+        feature_importance_path = model_folder / f"wildlife_risk_feature_importance_{batch_id}.json"
 
         with open(model_path, "wb") as f:
             pickle.dump(model_pipeline, f)
+        with open(feature_importance_path, "w", encoding="utf-8") as f:
+            json.dump(feature_importances, f, indent=2)
 
         print(f"[OK] Model pipeline saved to {model_path}")
         print(f"[INFO] Model absolute path: {model_path.resolve()}")
+        print(f"[INFO] Feature importance saved to {feature_importance_path.resolve()}")
 
         with mlflow.start_run(run_name=f"train_{batch_id}"):
             mlflow.log_param("batch_id", batch_id)
-            mlflow.log_param("model_type", "logistic_regression_with_imputer")
+            mlflow.log_param("model_type", "xgboost_with_imputer")
             mlflow.log_param("gold_file_used", str(gold_source))
             mlflow.log_param("features_used", ",".join(features_used))
             mlflow.log_param("feature_count", len(features_used))
             mlflow.log_param("imputer_strategy", "median")
             mlflow.log_param("model_path", str(model_path))
+            mlflow.log_param("xgb_n_estimators", 200)
+            mlflow.log_param("xgb_max_depth", 6)
+            mlflow.log_param("xgb_learning_rate", 0.05)
+            mlflow.log_param("xgb_subsample", 0.9)
+            mlflow.log_param("xgb_colsample_bytree", 0.9)
 
             mlflow.log_metric("row_count", len(df))
             mlflow.log_metric("train_row_count", len(X_train))
@@ -155,6 +182,8 @@ def train_model(batch_id):
 
             for metric_name, metric_value in metrics.items():
                 mlflow.log_metric(metric_name, float(metric_value))
+            for feature_name, importance_value in feature_importances.items():
+                mlflow.log_metric(f"feature_importance_{feature_name}", float(importance_value))
 
             mlflow.sklearn.log_model(
                 sk_model=model_pipeline,
@@ -165,6 +194,7 @@ def train_model(batch_id):
             if artifact_gold_file and Path(artifact_gold_file).exists():
                 mlflow.log_artifact(str(artifact_gold_file), artifact_path="data")
             mlflow.log_artifact(str(model_path), artifact_path="model_file")
+            mlflow.log_artifact(str(feature_importance_path), artifact_path="model_file")
 
             print("[INFO] Logged model, metrics, params, and artifacts to MLflow")
 
@@ -178,6 +208,7 @@ def train_model(batch_id):
             "train_row_count": len(X_train),
             "test_row_count": len(X_test),
             "metrics": metrics,
+            "feature_importances": feature_importances,
             "model_path": str(model_path),
         }
 

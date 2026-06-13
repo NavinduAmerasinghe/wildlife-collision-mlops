@@ -12,22 +12,27 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import joblib
-from model.model_utils import find_latest_gold_csv
+from model.model_utils import find_latest_gold_csv, load_latest_gold_batch
 
 def compare_models(batch_id):
     """
     Loads Gold dataset, trains and compares two models, saves the best, and returns comparison info.
     """
-    gold_file = find_latest_gold_csv()
-    if not gold_file:
-        print('[ERROR] No Gold dataset found. Comparison aborted.')
-        return {'status': 'empty', 'row_count': 0, 'gold_file_used': None}
+    df, gold_source = load_latest_gold_batch()
+    artifact_gold_file = find_latest_gold_csv()
+    if df is None:
+        if artifact_gold_file:
+            print(f"[WARN] Falling back to local Gold CSV mirror: {artifact_gold_file}")
+            df = pd.read_csv(artifact_gold_file)
+            gold_source = str(artifact_gold_file)
+        else:
+            print('[ERROR] No Gold dataset found. Comparison aborted.')
+            return {'status': 'empty', 'row_count': 0, 'gold_file_used': None}
     try:
-        df = pd.read_csv(gold_file)
         print(f"[DEBUG] Gold dataset rows loaded for comparison: {len(df)}")
         if 'high_risk_target' not in df.columns:
             print('[ERROR] Gold dataset missing high_risk_target column. Comparison aborted.')
-            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_file)}
+            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_source)}
         # Select numeric features
         feature_candidates = [
             'temperature', 'precipitation', 'wind_speed', 'visibility',
@@ -36,7 +41,7 @@ def compare_models(batch_id):
         features_used = [f for f in feature_candidates if f in df.columns]
         if not features_used:
             print('[ERROR] No valid features found in Gold dataset. Comparison aborted.')
-            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_file)}
+            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_source)}
         # Drop rows with missing target
         df = df.dropna(subset=['high_risk_target'])
         # Print missing values before imputation
@@ -49,7 +54,7 @@ def compare_models(batch_id):
         # Split train/test
         if len(df) < 5:
             print('[WARN] Not enough data to split. Comparison aborted.')
-            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_file)}
+            return {'status': 'error', 'row_count': len(df), 'gold_file_used': str(gold_source)}
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
@@ -105,7 +110,7 @@ def compare_models(batch_id):
             'status': 'success',
             'batch_id': batch_id,
             'created_at': datetime.utcnow().replace(microsecond=0).isoformat(),
-            'gold_file_used': str(gold_file),
+            'gold_file_used': str(gold_source),
             'features_used': features_used,
             'row_count': len(df),
             'train_row_count': len(X_train),
@@ -117,4 +122,4 @@ def compare_models(batch_id):
         }
     except Exception as e:
         print(f'[ERROR] Model comparison failed: {e}')
-        return {'status': 'error', 'row_count': 0, 'gold_file_used': str(gold_file)}
+        return {'status': 'error', 'row_count': 0, 'gold_file_used': str(gold_source)}

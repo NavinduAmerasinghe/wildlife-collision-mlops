@@ -20,6 +20,8 @@ MODELS_DIR = PROJECT_ROOT / "models"
 BRONZE_DIR = DATA_DIR / "bronze"
 SILVER_DIR = DATA_DIR / "silver"
 GOLD_DIR = DATA_DIR / "gold"
+BRONZE_BATCHES = LOGS_DIR / "bronze_batches"
+SILVER_BATCHES = LOGS_DIR / "silver_batches"
 
 # Log and batch folders
 GOLD_BATCHES = LOGS_DIR / "gold_batches"
@@ -34,10 +36,6 @@ def dashboard_summary():
     """
     Returns a summary of the latest project outputs for the dashboard.
     """
-    debug_print_path("GOLD_DIR", GOLD_DIR)
-    print(f"Searching for gold data in: {GOLD_DIR}")
-    gold_csvs = list(GOLD_DIR.glob("gold_dataset_*.csv")) if GOLD_DIR.exists() else []
-    debug_print_path("gold_csvs", gold_csvs)
     debug_print_path("GOLD_BATCHES", GOLD_BATCHES)
     gold_file = find_latest_json_file(GOLD_BATCHES)
     debug_print_path("gold_file", gold_file)
@@ -100,19 +98,17 @@ def dashboard_pipeline_status():
     """
     Returns booleans for existence of key pipeline artifacts.
     """
-    debug_print_path("BRONZE_DIR", BRONZE_DIR)
-    debug_print_path("SILVER_DIR", SILVER_DIR)
-    debug_print_path("GOLD_DIR", GOLD_DIR)
+    debug_print_path("BRONZE_BATCHES", BRONZE_BATCHES)
+    debug_print_path("SILVER_BATCHES", SILVER_BATCHES)
+    debug_print_path("GOLD_BATCHES", GOLD_BATCHES)
     debug_print_path("MODELS_DIR", MODELS_DIR)
     debug_print_path("MODEL_COMPARISONS", MODEL_COMPARISONS)
-    print(f"Searching for gold data in: {GOLD_DIR}")
     print(f"Searching for models in: {MODELS_DIR}")
     print(f"Searching for model comparisons in: {MODEL_COMPARISONS}")
 
-    # Check for any files in bronze, silver, gold
-    bronze_available = any(BRONZE_DIR.rglob("*")) if BRONZE_DIR.exists() else False
-    silver_available = any(SILVER_DIR.rglob("*")) if SILVER_DIR.exists() else False
-    gold_available = any(GOLD_DIR.glob("gold_dataset_*.csv")) if GOLD_DIR.exists() else False
+    bronze_available = find_latest_json_file(BRONZE_BATCHES) is not None
+    silver_available = find_latest_json_file(SILVER_BATCHES) is not None
+    gold_available = find_latest_json_file(GOLD_BATCHES) is not None
 
     # Check for any .pkl model files in models dir
     model_available = any(MODELS_DIR.glob("*.pkl")) if MODELS_DIR.exists() else False

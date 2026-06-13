@@ -1,0 +1,28 @@
+{
+  "batch_id": "20260613T184113",
+  "created_at": "2026-06-13T18:42:29+00:00",
+  "gold_file_used": "s3a://wildlife-lake/gold/xgboost_training",
+  "features_used": [
+    "temperature",
+    "precipitation",
+    "wind_speed",
+    "visibility",
+    "speed_limit",
+    "hour",
+    "month",
+    "is_night",
+    "is_weekend",
+    "high_precipitation"
+  ],
+  "row_count": 6570,
+  "train_row_count": 5256,
+  "test_row_count": 1314,
+  "metrics": {
+    "accuracy": 0.8272450532724506,
+    "precision": 0.8095238095238095,
+    "recall": 0.13438735177865613,
+    "f1_score": 0.2305084745762712
+  },
+  "model_path": "/app/models/wildlife_risk_model_20260613T184113.pkl",
+  "status": "success"
+}

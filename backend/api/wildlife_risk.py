@@ -5,10 +5,10 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import re
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
+from gold.gold_utils import list_gold_batch_ids, load_gold_batch
 
 from utils.station_location_mapper import (
     STATION_TO_WILDLIFE_LOCATION,
@@ -19,84 +19,48 @@ from utils.station_location_mapper import (
 
 router = APIRouter(prefix="/api/wildlife", tags=["wildlife"])
 
-GOLD_DIR = Path(__file__).resolve().parents[2] / "data" / "gold"
-GOLD_PATTERN = re.compile(r"^gold_dataset_(\d{8}T\d{6})\.csv$", re.IGNORECASE)
+def read_latest_gold_dataset() -> Tuple[str, pd.DataFrame]:
+    """Load the latest Gold Delta batch and return the batch id plus dataframe."""
+    df, gold_path = load_gold_batch()
+    if df is None:
+        raise HTTPException(status_code=404, detail=f"No Gold Delta data found at {gold_path}.")
+    batch_ids = list_gold_batch_ids()
+    if not batch_ids:
+        raise HTTPException(status_code=404, detail="No Gold Delta batches found.")
+    return batch_ids[0], df
 
 
-def get_latest_gold_dataset() -> Path:
-    """Return the latest gold dataset based on the timestamp in the filename."""
-    if not GOLD_DIR.exists():
-        raise HTTPException(status_code=500, detail=f"Gold data directory not found: {GOLD_DIR}")
+def load_matching_gold_dataset(from_location: str, to_location: str) -> Tuple[str, pd.DataFrame, pd.DataFrame]:
+    """Load the newest Gold Delta batch that contains matching rows for the requested locations."""
+    batch_ids = list_gold_batch_ids()
+    if not batch_ids:
+        raise HTTPException(status_code=404, detail="No Gold Delta batches found.")
 
-    candidates: List[Tuple[str, Path]] = []
-    for path in GOLD_DIR.glob("gold_dataset_*.csv"):
-        match = GOLD_PATTERN.match(path.name)
-        if match:
-            candidates.append((match.group(1), path))
-
-    if not candidates:
-        raise HTTPException(status_code=404, detail="No gold dataset CSV files found.")
-
-    latest_path = max(candidates, key=lambda item: item[0])[1]
-    print(f"[INFO] Loaded gold dataset: {latest_path.name}")
-    return latest_path
-
-
-def read_latest_gold_dataset() -> Tuple[Path, pd.DataFrame]:
-    """Load the latest gold dataset and return the path plus dataframe."""
-    gold_path = get_latest_gold_dataset()
-    try:
-        df = pd.read_csv(gold_path)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to read gold dataset {gold_path.name}: {exc}")
-    return gold_path, df
-
-
-def get_gold_dataset_candidates() -> List[Path]:
-    """Return gold datasets sorted from newest to oldest."""
-    if not GOLD_DIR.exists():
-        raise HTTPException(status_code=500, detail=f"Gold data directory not found: {GOLD_DIR}")
-
-    candidates: List[Tuple[str, Path]] = []
-    for path in GOLD_DIR.glob("gold_dataset_*.csv"):
-        match = GOLD_PATTERN.match(path.name)
-        if match:
-            candidates.append((match.group(1), path))
-
-    if not candidates:
-        raise HTTPException(status_code=404, detail="No gold dataset CSV files found.")
-
-    return [path for _, path in sorted(candidates, key=lambda item: item[0], reverse=True)]
-
-
-def load_matching_gold_dataset(from_location: str, to_location: str) -> Tuple[Path, pd.DataFrame, pd.DataFrame]:
-    """Load the newest gold dataset that contains matching rows for the requested locations."""
-    latest_path: Optional[Path] = None
+    latest_batch_id: Optional[str] = None
     latest_df: Optional[pd.DataFrame] = None
 
-    for index, gold_path in enumerate(get_gold_dataset_candidates()):
-        try:
-            df = pd.read_csv(gold_path)
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Failed to read gold dataset {gold_path.name}: {exc}")
+    for index, batch_id in enumerate(batch_ids):
+        df, _ = load_gold_batch(batch_id=batch_id)
+        if df is None:
+            continue
 
         if index == 0:
-            latest_path = gold_path
+            latest_batch_id = batch_id
             latest_df = df
 
         matched = find_matching_rows(df, from_location, to_location)
         if not matched.empty:
-            if index > 0 and latest_path is not None:
-                print(f"[INFO] Latest gold dataset {latest_path.name} had no matches; using {gold_path.name} instead.")
+            if index > 0 and latest_batch_id is not None:
+                print(f"[INFO] Latest gold dataset {latest_batch_id} had no matches; using {batch_id} instead.")
             else:
-                print(f"[INFO] Loaded gold dataset: {gold_path.name}")
-            return gold_path, df, matched
+                print(f"[INFO] Loaded gold dataset batch: {batch_id}")
+            return batch_id, df, matched
 
-    if latest_path is None or latest_df is None:
-        raise HTTPException(status_code=404, detail="No gold dataset CSV files found.")
+    if latest_batch_id is None or latest_df is None:
+        raise HTTPException(status_code=404, detail="No Gold Delta batches found.")
 
-    print(f"[INFO] Loaded gold dataset: {latest_path.name}")
-    return latest_path, latest_df, latest_df.iloc[0:0]
+    print(f"[INFO] Loaded gold dataset batch: {latest_batch_id}")
+    return latest_batch_id, latest_df, latest_df.iloc[0:0]
 
 
 def pick_first_existing_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
@@ -290,7 +254,7 @@ async def location_mapping() -> Dict[str, Any]:
 @router.get("/locations")
 async def list_wildlife_locations() -> Dict[str, Any]:
     """List the unique wildlife locations from the latest gold dataset."""
-    gold_path, df = read_latest_gold_dataset()
+    gold_batch_id, df = read_latest_gold_dataset()
     if "location" in df.columns:
         locations = (
             df["location"]
@@ -305,7 +269,7 @@ async def list_wildlife_locations() -> Dict[str, Any]:
         locations = []
 
     return {
-        "gold_dataset": gold_path.name,
+        "gold_dataset": gold_batch_id,
         "total_rows": int(len(df)),
         "locations": sorted(locations),
     }
@@ -317,12 +281,12 @@ async def route_details_by_location(
     to_location: str = Query(..., min_length=1),
 ) -> Dict[str, Any]:
     """Return wildlife collision details using direct wildlife locations."""
-    gold_path, df, matched = load_matching_gold_dataset(from_location, to_location)
+    gold_batch_id, df, matched = load_matching_gold_dataset(from_location, to_location)
     if matched.empty:
         return {
             "from_location": from_location,
             "to_location": to_location,
-            "gold_dataset": gold_path.name,
+            "gold_dataset": gold_batch_id,
             "total_incidents": 0,
             "animal_breakdown": {},
             "severity_breakdown": {},
@@ -333,7 +297,7 @@ async def route_details_by_location(
 
     return summarize_wildlife_details(
         matched,
-        gold_dataset=gold_path.name,
+        gold_dataset=gold_batch_id,
         from_location=from_location,
         to_location=to_location,
     )
@@ -349,13 +313,13 @@ async def route_details(
     to_location = resolve_wildlife_location_from_station_name(to_station_name)
 
     if from_location is None or to_location is None:
-        gold_path, _ = read_latest_gold_dataset()
+        gold_batch_id, _ = read_latest_gold_dataset()
         return {
             "from_station_name": from_station_name,
             "to_station_name": to_station_name,
             "from_location": from_location,
             "to_location": to_location,
-            "gold_dataset": gold_path.name,
+            "gold_dataset": gold_batch_id,
             "total_incidents": 0,
             "animal_breakdown": {},
             "severity_breakdown": {},
@@ -364,14 +328,14 @@ async def route_details(
             "message": "Could not map one or both stations to wildlife locations.",
         }
 
-    gold_path, df, matched = load_matching_gold_dataset(from_location, to_location)
+    gold_batch_id, df, matched = load_matching_gold_dataset(from_location, to_location)
     if matched.empty:
         return {
             "from_station_name": from_station_name,
             "to_station_name": to_station_name,
             "from_location": from_location,
             "to_location": to_location,
-            "gold_dataset": gold_path.name,
+            "gold_dataset": gold_batch_id,
             "total_incidents": 0,
             "animal_breakdown": {},
             "severity_breakdown": {},
@@ -382,7 +346,7 @@ async def route_details(
 
     return summarize_wildlife_details(
         matched,
-        gold_dataset=gold_path.name,
+        gold_dataset=gold_batch_id,
         from_location=from_location,
         to_location=to_location,
         from_station_name=from_station_name,

@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 import pandas as pd
 from pyspark.sql import functions as F
 
-from utils.spark_session import create_spark_session, get_gold_table_path
+from gold.gold_utils import load_gold_batch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -35,28 +35,4 @@ def load_latest_gold_batch(source_name: str = "xgboost_training") -> Tuple[Optio
     Loads the latest Gold batch from the Gold Delta table.
     Returns the pandas DataFrame plus the Delta table path, or (None, path) on failure.
     """
-    spark = create_spark_session(app_name=f"model-read-{source_name}")
-    gold_path = get_gold_table_path(source_name)
-
-    try:
-        df = spark.read.format("delta").load(gold_path)
-    except Exception as exc:
-        print(f"[WARN] Failed to read Gold Delta table at {gold_path}: {exc}")
-        spark.stop()
-        return None, gold_path
-
-    if df.rdd.isEmpty():
-        spark.stop()
-        return None, gold_path
-
-    batch_row = df.select(F.max("batch_id").alias("latest_batch_id")).collect()[0]
-    latest_batch_id = batch_row["latest_batch_id"]
-    if latest_batch_id is None:
-        spark.stop()
-        return None, gold_path
-
-    latest_batch_df = df.filter(F.col("batch_id") == latest_batch_id)
-    pandas_df = latest_batch_df.toPandas()
-    spark.stop()
-    print(f"[INFO] Loaded Gold Delta batch {latest_batch_id} from {gold_path}")
-    return pandas_df, gold_path
+    return load_gold_batch(batch_id=None, source_name=source_name)
