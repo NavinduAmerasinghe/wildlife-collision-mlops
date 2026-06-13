@@ -68,4 +68,4 @@ def write_silver_delta(df: pd.DataFrame, source_name: str, batch_id: str) -> str
 
 
 def should_write_local_silver_mirror() -> bool:
-    return os.getenv("SILVER_WRITE_LOCAL_MIRROR", "true").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("SILVER_WRITE_LOCAL_MIRROR", "false").strip().lower() in {"1", "true", "yes", "on"}

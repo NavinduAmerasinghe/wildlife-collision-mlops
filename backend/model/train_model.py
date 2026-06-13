@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
-from model.model_utils import find_latest_gold_csv, GOLD_DIR
+from model.model_utils import GOLD_DIR, find_latest_gold_csv, load_latest_gold_batch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -34,21 +34,24 @@ def train_model(batch_id):
     setup_mlflow()
 
     print(f"[INFO] Gold directory: {GOLD_DIR}")
-    
-    gold_file = find_latest_gold_csv()
 
-    if not gold_file:
-        print(f"[ERROR] No Gold dataset found in {GOLD_DIR}.")
-        return {
-            "status": "empty",
-            "row_count": 0,
-            "gold_file_used": None,
-        }
+    df, gold_source = load_latest_gold_batch()
+    artifact_gold_file = find_latest_gold_csv()
 
-    print(f"[INFO] Gold file found: {gold_file}")
+    if df is None:
+        if artifact_gold_file:
+            print(f"[WARN] Falling back to local Gold CSV mirror: {artifact_gold_file}")
+            df = pd.read_csv(artifact_gold_file)
+            gold_source = str(artifact_gold_file)
+        else:
+            print(f"[ERROR] No Gold dataset found in Delta or {GOLD_DIR}.")
+            return {
+                "status": "empty",
+                "row_count": 0,
+                "gold_file_used": None,
+            }
 
     try:
-        df = pd.read_csv(gold_file)
         print(f"[DEBUG] Gold dataset rows loaded for training: {len(df)}")
 
         if "high_risk_target" not in df.columns:
@@ -56,7 +59,7 @@ def train_model(batch_id):
             return {
                 "status": "error",
                 "row_count": len(df),
-                "gold_file_used": str(gold_file),
+                "gold_file_used": str(gold_source),
             }
 
         feature_candidates = [
@@ -79,7 +82,7 @@ def train_model(batch_id):
             return {
                 "status": "error",
                 "row_count": len(df),
-                "gold_file_used": str(gold_file),
+                "gold_file_used": str(gold_source),
             }
 
         df = df.dropna(subset=["high_risk_target"])
@@ -94,7 +97,7 @@ def train_model(batch_id):
             return {
                 "status": "error",
                 "row_count": len(df),
-                "gold_file_used": str(gold_file),
+                "gold_file_used": str(gold_source),
             }
 
         X = df[features_used]
@@ -140,7 +143,7 @@ def train_model(batch_id):
         with mlflow.start_run(run_name=f"train_{batch_id}"):
             mlflow.log_param("batch_id", batch_id)
             mlflow.log_param("model_type", "logistic_regression_with_imputer")
-            mlflow.log_param("gold_file_used", str(gold_file))
+            mlflow.log_param("gold_file_used", str(gold_source))
             mlflow.log_param("features_used", ",".join(features_used))
             mlflow.log_param("feature_count", len(features_used))
             mlflow.log_param("imputer_strategy", "median")
@@ -159,7 +162,8 @@ def train_model(batch_id):
                 input_example=X_train.head(1),
             )
 
-            mlflow.log_artifact(str(gold_file), artifact_path="data")
+            if artifact_gold_file and Path(artifact_gold_file).exists():
+                mlflow.log_artifact(str(artifact_gold_file), artifact_path="data")
             mlflow.log_artifact(str(model_path), artifact_path="model_file")
 
             print("[INFO] Logged model, metrics, params, and artifacts to MLflow")
@@ -168,7 +172,7 @@ def train_model(batch_id):
             "status": "success",
             "batch_id": batch_id,
             "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
-            "gold_file_used": str(gold_file),
+            "gold_file_used": str(gold_source),
             "features_used": features_used,
             "row_count": len(df),
             "train_row_count": len(X_train),
@@ -182,5 +186,5 @@ def train_model(batch_id):
         return {
             "status": "error",
             "row_count": 0,
-            "gold_file_used": str(gold_file),
+            "gold_file_used": str(gold_source),
         }

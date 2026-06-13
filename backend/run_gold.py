@@ -4,9 +4,14 @@ Gold pipeline runner for wildlife collision MLOps project.
 from datetime import datetime
 import json
 from pathlib import Path
+import os
 from gold.build_gold import build_gold
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _should_run_dvc() -> bool:
+    return os.getenv("GOLD_RUN_DVC", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 def generate_batch_id():
     """
@@ -54,12 +59,14 @@ def main():
     # Save Gold batch metadata
     save_gold_metadata(batch_id, gold_info)
 
-    # DVC tracking for gold
-    try:
-        from utils import dvc_utils
-        dvc_utils.run_dvc_add("data/gold/")
-    except Exception as e:
-        print(f"[DVC] Warning: {e}")
+    if _should_run_dvc():
+        try:
+            from utils import dvc_utils
+            dvc_utils.run_dvc_add("data/gold/")
+        except Exception as e:
+            print(f"[DVC] Warning: {e}")
+    else:
+        print("[INFO] Skipping DVC tracking in this run.")
 
     print("\n[COMPLETE] Gold pipeline finished.\n")
 

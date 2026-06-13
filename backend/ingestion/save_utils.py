@@ -13,7 +13,7 @@ from utils.spark_session import create_spark_session, get_bronze_table_path
 
 
 def _should_write_local_mirror() -> bool:
-    return os.getenv("BRONZE_WRITE_LOCAL_MIRROR", "true").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("BRONZE_WRITE_LOCAL_MIRROR", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _write_local_csv(df: pd.DataFrame, source_name: str, batch_id: str, base_dir: str) -> str:

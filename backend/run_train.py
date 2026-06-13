@@ -6,6 +6,7 @@ Logs training results to MLflow and saves local JSON metadata.
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import os
 
 import mlflow
 from model.train_model import train_model
@@ -15,6 +16,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 MLFLOW_DB = f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
 EXPERIMENT_NAME = "wildlife_collision_model_training"
+
+
+def _should_run_dvc() -> bool:
+    return os.getenv("MODEL_RUN_DVC", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def generate_batch_id():
@@ -108,13 +113,15 @@ def main():
 
     log_to_mlflow(batch_id, run_info, metadata_path)
 
-    # DVC tracking for gold and models
-    try:
-        from utils import dvc_utils
-        dvc_utils.run_dvc_add("data/gold/")
-        dvc_utils.run_dvc_add("models/")
-    except Exception as e:
-        print(f"[DVC] Warning: {e}")
+    if _should_run_dvc():
+        try:
+            from utils import dvc_utils
+            dvc_utils.run_dvc_add("data/gold/")
+            dvc_utils.run_dvc_add("models/")
+        except Exception as e:
+            print(f"[DVC] Warning: {e}")
+    else:
+        print("[INFO] Skipping DVC tracking in this run.")
 
     print("\n[COMPLETE] Model training pipeline finished.\n")
 

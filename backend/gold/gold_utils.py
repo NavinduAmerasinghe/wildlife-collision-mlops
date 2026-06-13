@@ -68,4 +68,4 @@ def write_gold_delta(df: pd.DataFrame, batch_id: str, source_name: str = "xgboos
 
 
 def should_write_local_gold_mirror() -> bool:
-    return os.getenv("GOLD_WRITE_LOCAL_MIRROR", "true").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("GOLD_WRITE_LOCAL_MIRROR", "false").strip().lower() in {"1", "true", "yes", "on"}
